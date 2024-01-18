@@ -95,12 +95,22 @@ for(i in 1:100){
 }
 
 SMILE.obs	<-	stochastic.sims
+# add missing params
+nreps <- length(SMILE.obs)
+
 hat.mat			<-	array(0,dim=c(nreps,5,5),dimnames=list(1:nreps
 															 ,c("tau","theta","b0","b1","loglik")
 															 ,c("SMILE","SMIL","SML","SL","L")))
 
 #######################################################################################
 # Using all information
+
+# add missing params
+b0.start <- -15
+b1.start <- 0.5
+tau.start <- 5
+theta.start <- 5
+
 for(i in 1:nreps){
 	
 	hat.mat[i,,1]	<-	SMILE.param.estim(b0=b0.start,b1=b1.start
