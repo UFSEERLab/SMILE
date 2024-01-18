@@ -2,8 +2,8 @@ library(plotrix)
 library(diagram)
 
 ## Conceptual diagram of the SMILE model
-png("~/Dropbox/JuanPabloThesis/PostDoc/SMILE/Figures/Figure1.png",family="Times"
-			,width=8,height=8,units="in",res=300,type="cairo")
+# png("~/Dropbox/JuanPabloThesis/PostDoc/SMILE/Figures/Figure1.png",family="Times"
+# 			,width=8,height=8,units="in",res=300,type="cairo")
 par(mar=c(0,0,0,0),oma=c(0.5,0.5,0.5,0.5))
 plot(0,0,xlim=c(0,9.5),ylim=c(0,5.5),axes=FALSE,type="n")
 # Circles and text of compartments
@@ -66,12 +66,12 @@ segments(9,0.5,9,5.1)
 segments(9,5.1,4.6,5.1)
 Arrows(4.6,5.1,4.6,4.7)
 
-dev.off()
+# dev.off()
 
 ## Plotting the case of intermediate dispersal comparing LIZ and suceptibles
 
-png("~/Dropbox/JuanPabloThesis/PostDoc/SMILE/Figures/Figure2.png",family="Times"
-			,width=7.5,height=7,units="in",res=300,type="cairo")
+# png("~/Dropbox/JuanPabloThesis/PostDoc/SMILE/Figures/Figure2.png",family="Times"
+# 			,width=7.5,height=7,units="in",res=300,type="cairo")
 #tiff("~/Dropbox/JuanPabloThesis/PostDoc/SMILE/Figures/SMILE_LIZ_suc.tiff",width=9,height=7,units="in",res=300
 #	,compression="lzw",type="cairo",family="times")
 par(mfrow=c(2,2),mar=c(2,2,1,2),oma=c(2,2,2,2),mgp=c(1.75,0.5,0),tcl=-0.2,cex.axis=1.25)
@@ -113,11 +113,11 @@ mtext("Suceptibles",4,outer=TRUE,cex=1.5)
 par(mar=c(0,0,0,0),fig=c(0,1,0,1),oma=c(0,0,0,0),new=TRUE)
 plot(0,0,type="n",axes=FALSE)
 legend("top",legend=c("Deaths","Suceptibles"),lty=c(1,2),col=c("black","red"),bty="n",horiz=TRUE,cex=1.25)
-dev.off()
+# dev.off()
 
 # Boxplots with estimates of b0, b1, thau and theta using different sources of information
-png("~/Dropbox/JuanPabloThesis/PostDoc/SMILE/Figures/Figure3.png",family="Times"
-			,width=7,height=7,units="in",type="cairo",res=300)
+# png("~/Dropbox/JuanPabloThesis/PostDoc/SMILE/Figures/Figure3.png",family="Times"
+# 			,width=7,height=7,units="in",type="cairo",res=300)
 #tiff("~/Dropbox/JuanPabloThesis/PostDoc/SMILE/Figures/SMILE_rel_bias.tiff",width=9,height=9,units="in",res=300
 #	,compression="lzw",type="cairo",family="times")
 	
@@ -134,10 +134,10 @@ for(i in 1:4){
 }
 mtext("Relative Bias",side=2,outer=TRUE,cex=1.5)
 mtext("Type of Information",side=1,outer=TRUE,cex=1.5)
-dev.off()
+# dev.off()
 
 # Montana outbreak
-png("~/Dropbox/JuanPabloThesis/PostDoc/SMILE/Figures/Figure4.png",family="Times",width=7,height=7,units="in",res=300,type="cairo")
+# png("~/Dropbox/JuanPabloThesis/PostDoc/SMILE/Figures/Figure4.png",family="Times",width=7,height=7,units="in",res=300,type="cairo")
 par(mar=c(3,3,1,1),oma=c(1,1,1.5,1),mgp=c(1.75,0.5,0),tcl=-0.2)
 plot(0,0,type="n",bty="l",xaxt="n",xlim=c(0,53),ylim=c(0,max(montana.stoch))
 	,xlab="Time (Weeks)",ylab="Number of Deaths",cex.lab=1.5)
@@ -153,10 +153,10 @@ points(montana.pred,type="l",col="red",lwd=2)
 par(fig=c(0,1,0,1),mar=c(0,3,0,1),oma=c(0,0,0,0),new=TRUE)
 plot(0,0,type="n",axes=FALSE,ylab="")
 legend("top",c("Observed","Deterministic\nPrediction","Stochastic\nSimulation"),lty=1,col=c("black","red","grey"),horiz=TRUE,bty="n")
-dev.off()
+# dev.off()
 
 #Figure S1
-png("~/Dropbox/JuanPabloThesis/PostDoc/SMILE/Figures/FigureS1.png",width=5,height=5,units="in",res=299,type="cairo")
+# png("~/Dropbox/JuanPabloThesis/PostDoc/SMILE/Figures/FigureS1.png",width=5,height=5,units="in",res=299,type="cairo")
 mat	<-	matrix(c(1,1,2,2
 				,1,4,2,5
 				,1,1,2,2
@@ -212,11 +212,11 @@ plot(0,0,type="n",axes=FALSE,xlab="",ylab="")
 legend("center",legend=c(expression(R[0]<1),expression(R[0]>1)),fill=c("black","grey"),border=c("black","grey"),bty="n",cex=1.5)
 mtext(expression(tau),1,cex=1.5,outer=TRUE)
 mtext(expression(theta),2,cex=1.5,outer=TRUE)
-dev.off()
-
-# Figure S2
-png("~/Dropbox/JuanPabloThesis/PostDoc/SMILE/Figures/FigureS2.png",family="Times"
-			,width=7,height=7,units="in",res=300,type="cairo")
+# dev.off()
+# 
+# # Figure S2
+# png("~/Dropbox/JuanPabloThesis/PostDoc/SMILE/Figures/FigureS2.png",family="Times"
+# 			,width=7,height=7,units="in",res=300,type="cairo")
 	
 #fig.lab	<-	c(expression(tau),expression(theta),expression(b[0]),expression(b[1]))
 fig.lab	<-	c("A)","B)","C)","D)")	
@@ -230,12 +230,12 @@ for(i in 1:4){
 }
 mtext("Relative Bias",side=2,outer=TRUE,cex=1.5)
 mtext("Type of Information",side=1,outer=TRUE,cex=1.5)
-dev.off()
-
-
-# Figure S3
-png("~/Dropbox/JuanPabloThesis/PostDoc/SMILE/Figures/FigureS3.png",family="Times"
-			,width=7,height=7,units="in",res=300,type="cairo")
+# dev.off()
+# 
+# 
+# # Figure S3
+# png("~/Dropbox/JuanPabloThesis/PostDoc/SMILE/Figures/FigureS3.png",family="Times"
+# 			,width=7,height=7,units="in",res=300,type="cairo")
 
 fig.lab	<-	c("A)","B)","C)","D)")	
 #fig.lab	<-	c(expression(tau),expression(theta),expression(b[0]),expression(b[1]))
@@ -250,7 +250,7 @@ for(i in 1:4){
 }
 mtext("Relative Bias",side=2,outer=TRUE,cex=1.5)
 mtext("Type of Information",side=1,outer=TRUE,cex=1.5,line=0.5)
-dev.off()
+# dev.off()
 
 
 
