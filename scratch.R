@@ -3,22 +3,21 @@
 
 # Figures
 
-
-stochastic.sims
-
 library(tidyverse)
 
-map_df(stochastic.sims, "LIZ")
 
-stoch.s <- map_df(stochastic.sims, "Suceptibles") %>% 
-  mutate(time = row_number()) %>% 
-  pivot_longer(-time)
-
-i<-1
-my.s <- stochastic.sims[[i]]$Suceptibles
-my.m <- stochastic.sims[[i]]$Immune
-my.i <- stochastic.sims[[i]]$Infected
-my.liz <- stochastic.sims[[i]]$LIZ
-my.e <- stochastic.sims[[i]]$Environment
-
-time <- 1:length(my.s)
+pdf("Stochsims.pdf")
+for(i in 1:100){
+  do.call(cbind.data.frame, stochastic.sims[[i]]) %>% 
+    rownames_to_column(
+      var = "time"
+    ) %>% 
+    pivot_longer(-time, names_to = "compartment") -> my_df
+  
+  print(  my_df %>% 
+            ggplot(aes(x = time, y = value, group = compartment)) +
+            facet_wrap(~compartment, scale = "free") +
+            geom_line() +
+            labs(title = paste("Sim", i)))
+}
+dev.off()
