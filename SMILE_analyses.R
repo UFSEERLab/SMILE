@@ -186,6 +186,22 @@ for(j in 1:5){
 	}	
 }
 
+
+### TROUBLESHOOTING #######
+
+# Check what the data looks like for the last one where the error shows up:
+# In this run: i=91, j=5
+cbind.data.frame(jth.obs[[i]]) %>% 
+  rownames_to_column(
+    var = "time"
+  ) %>% 
+  pivot_longer(-time, names_to = "compartment") %>% 
+  ggplot(aes(x = time, y = value, group = compartment)) +
+  facet_wrap(~compartment, scale = "free") +
+  geom_line()
+
+
+
 ############################################################################################################
 ###### Now taking two time series at a time
 which.sel	<-	expand.grid(1:5,1:5)
