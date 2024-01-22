@@ -21,3 +21,4 @@ for(i in 1:100){
             labs(title = paste("Sim", i)))
 }
 dev.off()
+
