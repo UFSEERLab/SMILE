@@ -95,12 +95,22 @@ for(i in 1:100){
 }
 
 SMILE.obs	<-	stochastic.sims
+# add missing params
+nreps <- length(SMILE.obs)
+
 hat.mat			<-	array(0,dim=c(nreps,5,5),dimnames=list(1:nreps
 															 ,c("tau","theta","b0","b1","loglik")
 															 ,c("SMILE","SMIL","SML","SL","L")))
 
 #######################################################################################
 # Using all information
+
+set.seed(123) 
+b0.start	<-	runif(1,min=-36,max=-24) 
+b1.start	<-	runif(1,min=0.656,max=0.984) 
+theta.start	<-	log(runif(1,min=8,max=12)) 
+tau.start	<-	log(runif(1,min=8,max=12))
+
 for(i in 1:nreps){
 	
 	hat.mat[i,,1]	<-	SMILE.param.estim(b0=b0.start,b1=b1.start
@@ -175,6 +185,7 @@ for(j in 1:5){
 		
 	}	
 }
+
 
 ############################################################################################################
 ###### Now taking two time series at a time
@@ -321,3 +332,4 @@ r0.mat2[r0.mat2<1]	<-	0
 
 r0.mat3[r0.mat3>1]	<-	1
 r0.mat3[r0.mat3<1]	<-	0
+
