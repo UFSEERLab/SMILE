@@ -105,11 +105,11 @@ hat.mat			<-	array(0,dim=c(nreps,5,5),dimnames=list(1:nreps
 #######################################################################################
 # Using all information
 
-# add missing params
-b0.start <- -15
-b1.start <- 0.5
-tau.start <- 5
-theta.start <- 5
+set.seed(123) 
+b0.start	<-	runif(1,min=-36,max=-24) 
+b1.start	<-	runif(1,min=0.656,max=0.984) 
+theta.start	<-	log(runif(1,min=8,max=12)) 
+tau.start	<-	log(runif(1,min=8,max=12))
 
 for(i in 1:nreps){
 	
@@ -185,21 +185,6 @@ for(j in 1:5){
 		
 	}	
 }
-
-
-### TROUBLESHOOTING #######
-
-# Check what the data looks like for the last one where the error shows up:
-# In this run: i=91, j=5
-cbind.data.frame(jth.obs[[i]]) %>% 
-  rownames_to_column(
-    var = "time"
-  ) %>% 
-  pivot_longer(-time, names_to = "compartment") %>% 
-  ggplot(aes(x = time, y = value, group = compartment)) +
-  facet_wrap(~compartment, scale = "free") +
-  geom_line()
-
 
 
 ############################################################################################################
@@ -347,3 +332,4 @@ r0.mat2[r0.mat2<1]	<-	0
 
 r0.mat3[r0.mat3>1]	<-	1
 r0.mat3[r0.mat3<1]	<-	0
+
