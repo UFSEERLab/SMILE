@@ -3,5 +3,6 @@ The code in this repository contains the functions defined by the SMILE compartm
 
 In addition to the sorce function, we provide files with the data from a Montana Outbreak as well as the scripts written for the analysis ad figure reproduction provided in the text.
 
+
 Reference:
 Gomez, J.P., D. Nekorchuk, S.J. Ryan, L. Mao, J.M. Ponciano, J.K. Blackburn. Compartmental model for environmentally mediated indirect disease transmission. To be Submitted.

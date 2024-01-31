@@ -11,6 +11,9 @@
 # Version 1.1.
 # Last revised: March 7 2018.
 
+# Version: 2.0 - add vaccine
+# Revised to add livestock vaccine coverage: January 30 2024
+
 #################################
 # Infection probability based on Ponciano and Capistran 2011.
 lambda.t	<-	function(theta,tau,b,E){
@@ -31,7 +34,7 @@ b.season	<-	function(b0,b1,period,t){
 
 rho.n	<-	function(N){
 	
-	0.41/(1+(N/5000)^(10))
+	0.36/(1+(N/50000)^(10))
 	
 }
 
@@ -118,9 +121,9 @@ smile.vacc1	<-	function(b,theta,tau,years,beta0,beta1,vacc.vec,N1){
     tm1	<-	t-1
     lambda[tm1]	<-	lambda.t(theta=theta,tau=tau,b=b,E=E[tm1])
     
-    S[t]	<-	(S[tm1]*(1-lambda[tm1])) + M[tm1]*1/52
+    S[t]	<-	(S[tm1]*(1-lambda[tm1])) + M[tm1]*alpha
     I[t]	<-	S[tm1]*lambda[tm1]
-    M[t]	<-	I[tm1]*zeta[tm1] + M[tm1]*(1-(1/52))
+    M[t]	<-	I[tm1]*zeta[tm1] + M[tm1]*(1-(alpha))
     L[t]	<-	I[tm1]*(1-zeta[tm1])
     E[t]	<-	psi*L[tm1] + E[tm1]*gamma
     N[t]	<-	S[t]+M[t]
@@ -139,6 +142,246 @@ smile.vacc1	<-	function(b,theta,tau,years,beta0,beta1,vacc.vec,N1){
 }
 
 
+# This function simulates anthrax disease dynamics without host population dynamics
+# but infection probability has seasonal forcing.
+# Fixed parameter are the same as in smile1 function. 
+# Variable parameters tau and theta are also the same and b0, b1 and period 
+# introduce seasonality to the infection probability by modifying b. In this function
+# I assume that seasonality is product of an exponential cosine function where the intensity 
+# of the seasonality is given by b0*b1 and period gives the periodicity of the outbreak
+# tau and theta: Shape and Rate parameters of the gamma distribution defining dispersion effort.
+# period: is the period in weeks of the exponential sinusoid function
 
+smile.vacc2	<-	function(b0,b1,period,theta,tau,years,beta0,beta1,vacc.vec,N1){
+  
+  # Fixed parameters
+  alpha	<-	1/52
+  zeta0 <- 1/(1+exp(-(beta0+beta1*vacc.vec)))
+  gamma	<-	0.9868
+  psi		<-	1	 
+  
+  n.weeks		<-	years*52 + 1
+  zeta <- rep(zeta0,each=52)
+  zeta <- c(zeta[1],zeta)
+  
+  S<-	M<-	I<-	L<-E <-N<-lambda<- array(0,dim=c(n.weeks),dimnames=list(1:(n.weeks)))
+  N[1]		<-	N1
+  S[1]		<-	N[1]
+  
+  L[1]	<-	1; E[1]	<-	L[1]*psi	
+  
+  for(t in 2:n.weeks){
+    
+    tm1	<-	t-1
+    b	<-	b.season(b0=b0,b1=b1,period=period,t=t)
+    lambda[tm1]	<-	lambda.t(theta=theta,tau=tau,b=b,E=E[tm1])
+    
+    S[t]	<-	(S[tm1]*(1-lambda[tm1])) + M[tm1]*alpha
+    I[t]	<-	S[tm1]*lambda[tm1]
+    M[t]	<-	I[tm1]*zeta[tm1] + M[tm1]*(1-(alpha))
+    L[t]	<-	I[tm1]*(1-zeta[tm1])
+    E[t]	<-	psi*L[tm1] + E[tm1]*gamma
+    N[t]	<-	S[t]+M[t]
+    
+  }
+  
+  
+  results		<-	cbind(Suceptibles=S[-1]
+                   ,Immune=M[-1]
+                   ,Infected=I[-1]
+                   ,LIZ=L[-1]
+                   ,Environment=E[-1]
+                   ,lambda=lambda[-1])
+  
+  return(results)
+}
 
+# In this function I introduce population dynamics only as births at the begining of the year
+# determined by density dependent reproduction with a carrying capacity of 5000.
 
+smile.vacc3	<-	function(b,theta,tau,years,beta0,beta1,vacc.vec,N1){
+  
+  # Fixed parameters
+  alpha	<-	1/52
+  zeta0 <- 1/(1+exp(-(beta0+beta1*vacc.vec)))
+  gamma	<-	0.9868
+  psi		<-	1	 
+  
+  n.weeks		<-	years*52 + 1
+  zeta <- rep(zeta0,each=52)
+  zeta <- c(zeta[1],zeta)
+  
+  S<-	M<-	I<-	L<-E <-N<-lambda<- array(0,dim=c(n.weeks),dimnames=list(1:(n.weeks)))
+  N[1]		<-	N1
+  S[1]		<-	N[1]	
+  L[1]	<-	1; E[1]	<-	L[1]*psi	
+  
+  for(t in 2:n.weeks){
+    
+    tm1	<-	t-1
+    lambda[tm1]	<-	lambda.t(theta=theta,tau=tau,b=b,E=E[tm1])
+    births.happen	<-	as.numeric(t%%52==0)
+    rep.prob	<-	rho.n(N[tm1])
+    
+    S[t]	<-	(S[tm1]*(1-lambda[tm1])) + M[tm1]*alpha + rep.prob*(N[tm1])*births.happen
+    I[t]	<-	S[tm1]*lambda[tm1]
+    M[t]	<-	I[tm1]*zeta[tm1] + M[tm1]*(1-(alpha))
+    L[t]	<-	I[tm1]*(1-zeta[tm1])
+    E[t]	<-	psi*L[tm1] + E[tm1]*gamma
+    N[t]	<-	S[t]+M[t]
+    
+  }
+  
+  
+  results		<-	cbind(Suceptibles=S[-1]
+                   ,Immune=M[-1]
+                   ,Infected=I[-1]
+                   ,LIZ=L[-1]
+                   ,Environment=E[-1]
+                   ,lambda=lambda[-1])
+  
+  return(results)
+}
+
+##################################################################################
+# smile 4 function introduces population dynamics as in smile3 function but uses 
+# seasonal forcing for infection probability.
+
+smile.vacc4	<-	function(b0,b1,period,theta,tau,years,beta0,beta1,vacc.vec,N1){
+  
+  # Fixed parameters
+  alpha	<-	1/52
+  zeta0 <- 1/(1+exp(-(beta0+beta1*vacc.vec)))
+  gamma	<-	0.9868
+  psi		<-	1	 
+  
+  n.weeks		<-	years*52 + 1
+  zeta <- rep(zeta0,each=52)
+  zeta <- c(zeta[1],zeta)
+  
+  S<-	M<-	I<-	L<-E <-N<-lambda<- array(0,dim=c(n.weeks),dimnames=list(1:(n.weeks)))
+  N[1]		<-	N1
+  S[1]		<-	N[1]	
+  L[1]	<-	1; E[1]	<-	L[1]*psi	
+  
+  for(t in 2:n.weeks){
+    
+    tm1	<-	t-1
+    b	<-	b.season(b0,b1,period,t)
+    lambda[tm1]	<-	lambda.t(theta=theta,tau=tau,b=b,E=E[tm1])
+    births.happen	<-	as.numeric(t%%52==0)
+    rep.prob	<-	rho.n(N[tm1])
+    
+    S[t]	<-	(S[tm1]*(1-lambda[tm1])) + M[tm1]*alpha + rep.prob*(N[tm1])*births.happen
+    I[t]	<-	S[tm1]*lambda[tm1]
+    M[t]	<-	I[tm1]*zeta[tm1] + M[tm1]*(1-(alpha))
+    L[t]	<-	I[tm1]*(1-zeta[tm1])
+    E[t]	<-	psi*L[tm1] + E[tm1]*gamma
+    N[t]	<-	S[t]+M[t]
+    
+  }
+  
+  
+  results		<-	cbind(Suceptibles=S[-1]
+                   ,Immune=M[-1]
+                   ,Infected=I[-1]
+                   ,LIZ=L[-1]
+                   ,Environment=E[-1]
+                   ,lambda=lambda[-1])
+  
+  return(results)
+}
+
+# smile5 is the most realistic function of the group since it incorporates both births and deaths from other causes
+# than the disease in population dynamics. Deaths are given by a 1- sigmaa = 1 - 0.92^(1/52)
+smile.vacc5	<-	function(b0,b1,period,theta,tau,years,beta0,beta1,vacc.vec,N1){
+  
+  # Fixed parameters
+  alpha	<-	1/52
+  zeta0 <- 1/(1+exp(-(beta0+beta1*vacc.vec)))
+  gamma	<-	0.9868
+  sigmaa	<-	0.92^(1/52)
+  psi		<-	1	 
+  
+  n.weeks		<-	years*52 + 1
+  zeta <- rep(zeta0,each=52)
+  zeta <- c(zeta[1],zeta)
+  
+  S<-	M<-	I<-	L<-E <-N<-lambda<- array(0,dim=c(n.weeks),dimnames=list(1:(n.weeks)))
+  N[1]		<-	N1
+  S[1]		<-	N[1]	
+  L[1]	<-	1; E[1]	<-	L[1]*psi	
+  
+  for(t in 2:n.weeks){
+    
+    tm1	<-	t-1
+    b	<-	b.season(b0,b1,period,t)
+    lambda[tm1]	<-	lambda.t(theta=theta,tau=tau,b=b,E=E[tm1])
+    births.happen	<-	as.numeric(t%%52==0)
+    rep.prob	<-	rho.n(N[tm1])
+    
+    S[t]	<-	(S[tm1]*(1-lambda[tm1]))*sigmaa + M[tm1]*sigmaa*alpha + rep.prob*(N[tm1])*births.happen
+    I[t]	<-	S[tm1]*lambda[tm1]
+    M[t]	<-	I[tm1]*zeta[tm1] + M[tm1]*sigmaa*(1-(alpha))
+    L[t]	<-	I[tm1]*(1-zeta[tm1])
+    E[t]	<-	psi*L[tm1] + E[tm1]*gamma
+    N[t]	<-	S[t]+M[t]
+    
+  }
+  
+  
+  results		<-	cbind(Suceptibles=S[-1]
+                   ,Immune=M[-1]
+                   ,Infected=I[-1]
+                   ,LIZ=L[-1]
+                   ,Environment=E[-1])
+  
+  return(results)
+}
+
+# smile6 incorporates both births and deaths from other causes
+# Deaths are given by a 1- sigmaa = 1 - 0.92^(1/52). The infection probability is NOT seasonal
+
+smile.vacc6	<-	function(b,theta,tau,years,beta0,beta1,vacc.vec,N1){
+  
+  # Fixed parameters
+  alpha	<-	1/52
+  zeta0 <- 1/(1+exp(-(beta0+beta1*vacc.vec)))
+  gamma	<-	0.9868
+  sigmaa	<-	0.92^(1/52)
+  psi		<-	1	 
+  
+  n.weeks		<-	years*52 + 1
+  zeta <- rep(zeta0,each=52)
+  zeta <- c(zeta[1],zeta)
+  
+  S<-	M<-	I<-	L<-E <-N<-lambda<- array(0,dim=c(n.weeks),dimnames=list(1:(n.weeks)))
+  N[1]		<-	N1
+  S[1]		<-	N[1]	
+  L[1]	<-	1; E[1]	<-	L[1]*psi	
+  
+  for(t in 2:n.weeks){
+    
+    tm1	<-	t-1
+    lambda[tm1]	<-	lambda.t(theta=theta,tau=tau,b=b,E=E[tm1])
+    births.happen	<-	as.numeric(t%%52==0)
+    rep.prob	<-	rho.n(N[tm1])
+    
+    S[t]	<-	(S[tm1]*(1-lambda[tm1]))*sigmaa + M[tm1]*sigmaa*alpha + rep.prob*(N[tm1])*births.happen
+    I[t]	<-	S[tm1]*lambda[tm1]
+    M[t]	<-	I[tm1]*zeta[tm1] + M[tm1]*sigmaa*(1-(alpha))
+    L[t]	<-	I[tm1]*(1-zeta[tm1])
+    E[t]	<-	psi*L[tm1] + E[tm1]*gamma
+    N[t]	<-	S[t]+M[t]
+    
+  }
+  
+  
+  results		<-	cbind(Suceptibles=S[-1]
+                    ,Immune=M[-1]
+                    ,Infected=I[-1]
+                    ,LIZ=L[-1]
+                    ,Environment=E[-1])
+  
+  return(results)
+}
