@@ -24,6 +24,7 @@ smile_fx <- function(b0,b1,period,theta,tau,years,
                      b_fixed = NULL,
                      # To remove host age structuring, change to false
                      age_struc = TRUE,
+                     stochastic = FALSE,
                      LIZ_init = 1, 
                      output_df = FALSE) {
   
@@ -69,14 +70,29 @@ smile_fx <- function(b0,b1,period,theta,tau,years,
       rep.prob	<-	rho_n(N[tm1], K)
     }
     
+    if(stochastic == TRUE) {
+      
+      I[t]	<-	rbinom(1,S[tm1],lambda[tm1])
+      births	<-	rbinom(1,N[tm1],rep.prob)*births.happen
+      M.surv	<-	rbinom(1,M[tm1],sigmaa)
+      M.recov	<-	rbinom(1,M.surv,alpha)
+      M.new	<-	rbinom(1,I[tm1],zeta)
+      S[t]	<-	rbinom(1,S[tm1]-I[t],sigmaa) + M.recov + births
+      M[t]	<-	M.new + (M.surv - M.recov)
+      L[t]	<-	(I[tm1]-M.new)
+      E[t]	<-	rpois(1,psi*L[tm1]) + rbinom(1,E[tm1],gamma)
+      N[t]	<-	S[t]+M[t]
+      
+    } else {
+      
+      S[t]	<-	(S[tm1]*(1-lambda[tm1]))*sigmaa + M[tm1]*sigmaa*1/52 + rep.prob*(N[tm1])*births.happen
+      I[t]	<-	S[tm1]*lambda[tm1]
+      M[t]	<-	I[tm1]*zeta[tm1] + M[tm1]*sigmaa*(1-(1/52))
+      L[t]	<-	I[tm1]*(1-zeta[tm1])
+      E[t]	<-	psi*L[tm1] + E[tm1]*gamma
+      N[t]	<-	S[t]+M[t]
+    }
 
-    S[t]	<-	(S[tm1]*(1-lambda[tm1]))*sigmaa + M[tm1]*sigmaa*1/52 + rep.prob*(N[tm1])*births.happen
-    I[t]	<-	S[tm1]*lambda[tm1]
-    M[t]	<-	I[tm1]*zeta[tm1] + M[tm1]*sigmaa*(1-(1/52))
-    L[t]	<-	I[tm1]*(1-zeta[tm1])
-    E[t]	<-	psi*L[tm1] + E[tm1]*gamma
-    N[t]	<-	S[t]+M[t]
-    
   }
   
   
@@ -108,3 +124,19 @@ rho_n	<-	function(N, K){
   
 }
 
+# No change to these ones:
+
+# Infection probability based on Ponciano and Capistran 2011.
+lambda.t	<-	function(theta,tau,b,E){
+  
+  1-(theta/(theta+b*E))^tau
+  
+}
+
+# Introducing seasonality in the infection probability through b.
+
+b.season	<-	function(b0,b1,period,t){
+  
+  exp(b0*(1+b1*cos((2*pi*t)/period)))
+  
+}

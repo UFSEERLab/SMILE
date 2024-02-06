@@ -207,6 +207,58 @@ sim5_1 <- smile_fx(b0 = -30, b1 = 0.85, period = 3*52, theta = 10, tau = 10, yea
 build_comp_plots(sim5.0, sim5_1)
 ```
 
+# Stochastic version of the last one:
+
+```{r}
+stochastic.sims	<-	list()
+LIZ.stoch		<-	matrix(0,nrow=100,ncol=520)
+for(i in 1:100){
+  
+	stochastic.sims[[i]]	<-	smile5.stoch(b0=b0,b1=b1,period=period,tau=tau,theta=theta,years=10)
+	LIZ.stoch[i,]			<-	stochastic.sims[[i]]$LIZ
+	
+}
+```
+
+```{r}
+
+stochastic_sims	<-	list()
+LIZ_stoch		<-	matrix(0,nrow=100,ncol=520)
+for(i in 1:100){
+  
+	stochastic_sims[[i]]	<-	smile_fx(b0 = -30, b1 = 0.85, period = 3*52, theta = 10, tau = 10, years = 10, sigmaa = 0.92^(1/52), stochastic = TRUE)
+	LIZ_stoch[i,]			<-	stochastic.sims[[i]]$LIZ
+	
+}
+
+```
+
+
+```{r}
+as.data.frame(LIZ.stoch) %>% rownames_to_column(var = "sim") %>% 
+  pivot_longer(-sim, names_to = "week", values_to = "n_LIZ") %>% 
+  mutate(week = str_remove(week, "V"), week = as.numeric(week)) %>% 
+  mutate(model = "OG") -> og_stochastic
+
+as.data.frame(LIZ_stoch) %>% rownames_to_column(var = "sim") %>% 
+  pivot_longer(-sim, names_to = "week", values_to = "n_LIZ") %>% 
+  mutate(week = str_remove(week, "V"), week = as.numeric(week)) %>% 
+  mutate(model = "NEW") -> new_stochastic
+```
+
+Very similar results, considering this is the stochastic versions. It makes sense. 
+```{r}
+bind_rows(og_stochastic, new_stochastic) %>% 
+  # filter(sim %in% 10:15) %>% 
+  ggplot(aes(x = week, y = n_LIZ, group = sim)) +
+  facet_wrap(~model) +
+  # facet_grid(sim~model) +
+  geom_line() +
+  theme_minimal()
+```
+
+
+
 # Adding vaccine 
 
 I modified the main function so we use the same one and just change the arguments.
