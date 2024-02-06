@@ -1,0 +1,130 @@
+---
+title: "EPI Research day"
+format: html
+self-contained: true
+---
+
+
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+library(cowplot)
+```
+
+
+```{r}
+source(file = "../smile_main.R")
+```
+
+
+# EPI Research Day
+
+```{r}
+years <- 23
+vacc.pcts<- c(0.34, 0.24, 0.37, 0.44, 0.44, 0.64, 0.71, 0.69, 0.73, 
+              0.72, 0.66, 0.60, 0.57, 0.27, 0.27, 0.16, 0.12, 0.12, 
+              0.10, 0.08, 0.05, 0.05, 0.02)
+```
+
+
+# Scenario 1 
+no vaccine and no seasonal transmission 
+
+```{r}
+
+vax_smile_tests <- smile_fx(b0 = NULL, b1 = NULL, period = NULL, theta = 100, tau = 1, years = 23, 
+                       beta_0 = -3.5, beta_1 = 6.86, vax = rep(0, 23), N1 = 20000, K = 50000, b_fixed = 0.001, output_df = TRUE)
+
+vax_smile_tests %>% 
+  pivot_longer(-week, names_to = "compartment", values_to = "n") %>% 
+  mutate(compartment = factor(compartment, levels = c("S", "M", "I", "L", "E", "Z"))) %>% 
+  ggplot(aes(x = week, y = n)) +
+  facet_wrap(~compartment, scales = "free") +
+  geom_path() +
+  theme_bw()
+
+```
+
+
+
+# Scenario 2
+with vaccine and no seasonal transmission 
+
+```{r}
+
+vax_smile_tests <- smile_fx(b0 = NULL, b1 = NULL, period = NULL, theta = 100, tau = 1, years = 23, 
+                       beta_0 = -3.5, beta_1 = 6.86, vax = vacc.pcts, N1 = 20000, K = 50000, b_fixed = 0.001, output_df = TRUE)
+
+vax_smile_tests %>% 
+  pivot_longer(-week, names_to = "compartment", values_to = "n") %>% 
+  mutate(compartment = factor(compartment, levels = c("S", "M", "I", "L", "E", "Z"))) %>% 
+  ggplot(aes(x = week, y = n)) +
+  facet_wrap(~compartment, scales = "free") +
+  geom_path() +
+  theme_bw()
+
+```
+# Scenario 3
+no vaccine and seasonal transmission 
+
+```{r}
+
+vax_smile_tests <- smile_fx(b0 = -30, b1 = 0.85, period = 3*52, theta = 100, tau = 1, years = 23, 
+                       beta_0 = -3.5, beta_1 = 6.86, vax = rep(0, 23), N1 = 20000, K = 50000, output_df = TRUE)
+
+vax_smile_tests %>% 
+  pivot_longer(-week, names_to = "compartment", values_to = "n") %>% 
+  mutate(compartment = factor(compartment, levels = c("S", "M", "I", "L", "E", "Z"))) %>% 
+  ggplot(aes(x = week, y = n)) +
+  facet_wrap(~compartment, scales = "free") +
+  geom_path() +
+  theme_bw()
+
+```
+
+# Scenario 4
+with vaccine and seasonal transmission 
+
+```{r}
+
+vax_smile_tests <- smile_fx(b0 = -30, b1 = 0.85, period = 3*52, theta = 100, tau = 1, years = 23, 
+                       beta_0 = -3.5, beta_1 = 6.86, vax = vacc.pcts, N1 = 20000, K = 50000, output_df = TRUE)
+
+vax_smile_tests %>% 
+  pivot_longer(-week, names_to = "compartment", values_to = "n") %>% 
+  mutate(compartment = factor(compartment, levels = c("S", "M", "I", "L", "E", "Z"))) %>% 
+  ggplot(aes(x = week, y = n)) +
+  facet_wrap(~compartment, scales = "free") +
+  geom_path() +
+  theme_bw()
+
+```
+
+
+This is the seasonality we are assuming for transmission 
+
+```{r}
+b <- b.season(b0 = -30,b1 = 0.85,period = 3*52, 1:23*52 + 1)
+
+data.frame(year = 1:23, b = b) %>% 
+  ggplot(aes(x = year, y = b)) +
+  geom_path() +
+  theme_bw()
+```
+
+This is the survival probability curve we are assuming when incorporating vaccines 
+
+```{r}
+beta_0 = -3.5; beta_1 = 7.4
+
+vax.prcnt <- seq(0, 1, 0.001)
+surv.prob <- (1 / (1 + exp(-(beta_0 + beta_1 * vax.prcnt))))
+
+
+data.frame(vax.prcnt, surv.prob) %>% 
+  ggplot(aes(x = vax.prcnt, y = surv.prob)) +
+  geom_line() +
+  theme_bw()
+
+```
+
+
