@@ -1,0 +1,374 @@
+---
+title: "SMILE_main"
+format: html
+self-contained: true
+---
+
+Testing if the new function can recreate all the previous scenarios and new ones. Having a main function will help with the iteration and testing of the vaccine scenarios.
+
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+library(cowplot)
+```
+
+
+```{r}
+source(file = "../SMILE_v1.1.R")
+source(file = "../smile_main.R")
+```
+
+# smile5
+
+```{r}
+tau=10
+b0=-30
+b1=0.85
+period=3*52
+
+# Case 5.0: Low Dispersion. Mean dispersion effort is 0.1
+theta=10
+sim5.0		<-	smile5(b0=b0,b1=b1,period=period,tau=tau,theta=theta,years=10)
+```
+
+```{r}
+sim5_1 <- smile_fx(b0 = -30, b1 = 0.85, period = 3*52, theta = 10, tau = 10, years = 10)
+```
+
+```{r}
+# function to make the plots comparing original function to new function:
+
+build_comp_plots <- function(og_sims, new_sims) {
+  
+  sim5.0 <- og_sims
+  sim5_1 <- new_sims
+  
+      # Susceptibles
+    sim5.0$Suceptibles %>% tibble() %>% rownames_to_column() %>% purrr::set_names(c("week", "S")) %>% mutate(fx = "OG") %>% 
+      mutate(week = as.numeric(week)) -> S_comp
+      
+    S_comp %>% 
+      bind_rows(sim5_1$Suceptibles %>% tibble() %>% rownames_to_column() %>%
+                  purrr::set_names(c("week", "S")) %>% mutate(fx = "NEW", week = as.numeric(week))) %>% 
+      ggplot(aes(x = week, y = S)) +
+      facet_wrap(~fx) +
+      geom_line() +
+      theme_bw() -> S_plot
+    
+    # Immune
+    sim5.0$Immune %>% tibble() %>% rownames_to_column() %>% purrr::set_names(c("week", "M")) %>% mutate(fx = "OG") %>% 
+      mutate(week = as.numeric(week)) -> M_comp
+      
+    M_comp %>% 
+      bind_rows(sim5_1$Immune %>% tibble() %>% rownames_to_column() %>%
+                  purrr::set_names(c("week", "M")) %>% mutate(fx = "NEW", week = as.numeric(week))) %>% 
+      ggplot(aes(x = week, y = M)) +
+      facet_wrap(~fx) +
+      geom_line() +
+      theme_bw() -> M_plot
+    
+    # Infected
+    sim5.0$Infected %>% tibble() %>% rownames_to_column() %>% purrr::set_names(c("week", "I")) %>% mutate(fx = "OG") %>% 
+      mutate(week = as.numeric(week)) -> I_comp
+      
+    I_comp %>% 
+      bind_rows(sim5_1$Infected %>% tibble() %>% rownames_to_column() %>%
+                  purrr::set_names(c("week", "I")) %>% mutate(fx = "NEW", week = as.numeric(week))) %>% 
+      ggplot(aes(x = week, y = I)) +
+      facet_wrap(~fx) +
+      geom_line() +
+      theme_bw() -> I_plot
+    
+    # LIZ
+    sim5.0$LIZ %>% tibble() %>% rownames_to_column() %>% purrr::set_names(c("week", "L")) %>% mutate(fx = "OG") %>% 
+      mutate(week = as.numeric(week)) -> L_comp
+      
+    L_comp %>% 
+      bind_rows(sim5_1$LIZ %>% tibble() %>% rownames_to_column() %>%
+                  purrr::set_names(c("week", "L")) %>% mutate(fx = "NEW", week = as.numeric(week))) %>% 
+      ggplot(aes(x = week, y = L)) +
+      facet_wrap(~fx) +
+      geom_line() +
+      theme_bw() -> L_plot
+    
+    
+    # E
+    sim5.0$E %>% tibble() %>% rownames_to_column() %>% purrr::set_names(c("week", "E")) %>% mutate(fx = "OG") %>% 
+      mutate(week = as.numeric(week)) -> E_comp
+      
+    E_comp %>% 
+      bind_rows(sim5_1$E %>% tibble() %>% rownames_to_column() %>%
+                  purrr::set_names(c("week", "E")) %>% mutate(fx = "NEW", week = as.numeric(week))) %>% 
+      ggplot(aes(x = week, y = E)) +
+      facet_wrap(~fx) +
+      geom_line() +
+      theme_bw() -> E_plot
+    
+    plot_grid(S_plot, M_plot, I_plot, L_plot, E_plot, ncol = 1)
+
+}
+```
+
+```{r}
+build_comp_plots(sim5.0, sim5_1)
+```
+
+
+
+```{r echo=FALSE, fig.width=10, fig.height=12}
+
+# Susceptibles
+sim5.0$Suceptibles %>% tibble() %>% rownames_to_column() %>% purrr::set_names(c("week", "S")) %>% mutate(fx = "OG") %>% 
+  mutate(week = as.numeric(week)) -> S_comp
+  
+S_comp %>% 
+  bind_rows(sim5_1$Suceptibles %>% tibble() %>% rownames_to_column() %>%
+              purrr::set_names(c("week", "S")) %>% mutate(fx = "NEW", week = as.numeric(week))) %>% 
+  ggplot(aes(x = week, y = S)) +
+  facet_wrap(~fx) +
+  geom_line() +
+  theme_bw() -> S_plot
+
+# Immune
+sim5.0$Immune %>% tibble() %>% rownames_to_column() %>% purrr::set_names(c("week", "M")) %>% mutate(fx = "OG") %>% 
+  mutate(week = as.numeric(week)) -> M_comp
+  
+M_comp %>% 
+  bind_rows(sim5_1$Immune %>% tibble() %>% rownames_to_column() %>%
+              purrr::set_names(c("week", "M")) %>% mutate(fx = "NEW", week = as.numeric(week))) %>% 
+  ggplot(aes(x = week, y = M)) +
+  facet_wrap(~fx) +
+  geom_line() +
+  theme_bw() -> M_plot
+
+# Infected
+sim5.0$Infected %>% tibble() %>% rownames_to_column() %>% purrr::set_names(c("week", "I")) %>% mutate(fx = "OG") %>% 
+  mutate(week = as.numeric(week)) -> I_comp
+  
+I_comp %>% 
+  bind_rows(sim5_1$Infected %>% tibble() %>% rownames_to_column() %>%
+              purrr::set_names(c("week", "I")) %>% mutate(fx = "NEW", week = as.numeric(week))) %>% 
+  ggplot(aes(x = week, y = I)) +
+  facet_wrap(~fx) +
+  geom_line() +
+  theme_bw() -> I_plot
+
+# LIZ
+sim5.0$LIZ %>% tibble() %>% rownames_to_column() %>% purrr::set_names(c("week", "L")) %>% mutate(fx = "OG") %>% 
+  mutate(week = as.numeric(week)) -> L_comp
+  
+L_comp %>% 
+  bind_rows(sim5_1$LIZ %>% tibble() %>% rownames_to_column() %>%
+              purrr::set_names(c("week", "L")) %>% mutate(fx = "NEW", week = as.numeric(week))) %>% 
+  ggplot(aes(x = week, y = L)) +
+  facet_wrap(~fx) +
+  geom_line() +
+  theme_bw() -> L_plot
+
+
+# E
+sim5.0$E %>% tibble() %>% rownames_to_column() %>% purrr::set_names(c("week", "E")) %>% mutate(fx = "OG") %>% 
+  mutate(week = as.numeric(week)) -> E_comp
+  
+E_comp %>% 
+  bind_rows(sim5_1$E %>% tibble() %>% rownames_to_column() %>%
+              purrr::set_names(c("week", "E")) %>% mutate(fx = "NEW", week = as.numeric(week))) %>% 
+  ggplot(aes(x = week, y = E)) +
+  facet_wrap(~fx) +
+  geom_line() +
+  theme_bw() -> E_plot
+
+plot_grid(S_plot, M_plot, I_plot, L_plot, E_plot, ncol = 1)
+
+```
+
+
+# Adding vaccine 
+
+I modified the main function so we use the same one and just change the arguments.
+
+```{r}
+
+years <- 23
+vacc.pcts<- c(0.34, 0.24, 0.37, 0.44, 0.44, 0.64, 0.71, 0.69, 0.73, 
+              0.72, 0.66, 0.60, 0.57, 0.27, 0.27, 0.16, 0.12, 0.12, 
+              0.10, 0.08, 0.05, 0.05, 0.02)
+
+vax_smile5 <- smile_fx(b0 = -30, b1 = 0.85, period = 3*52, theta = 100, tau = 1, years = 23, 
+                       beta_0 = -3.5, beta_1 = 7.4, vax = vacc.pcts, N1 = 20000, K = 50000, output_df = TRUE)
+
+vax_smile5 %>% 
+  pivot_longer(-week, names_to = "compartment", values_to = "n") %>% 
+  mutate(compartment = factor(compartment, levels = c("S", "M", "I", "L", "E", "Z"))) %>% 
+  ggplot(aes(x = week, y = n)) +
+  facet_wrap(~compartment, scales = "free") +
+  geom_path() +
+  theme_bw()
+```
+
+## Scenario 6 from Tan's where we have no seasonality in transmission 
+
+```{r}
+
+vax_smile6 <- smile_fx(b0 = NULL, b1 = NULL, period = NULL, theta = 100, tau = 1, years = 23, 
+                       beta_0 = -3.5, beta_1 = 6.86, vax = vacc.pcts, N1 = 20000, K = 50000, b_fixed = 0.001, output_df = TRUE)
+
+vax_smile6 %>% 
+  pivot_longer(-week, names_to = "compartment", values_to = "n") %>% 
+  mutate(compartment = factor(compartment, levels = c("S", "M", "I", "L", "E", "Z"))) %>% 
+  ggplot(aes(x = week, y = n)) +
+  facet_wrap(~compartment, scales = "free") +
+  geom_path() +
+  theme_bw()
+
+```
+
+
+
+# EPI Research Day
+
+# Scenario 1 
+no vaccine and no seasonal transmission 
+
+```{r}
+
+vax_smile_tests <- smile_fx(b0 = NULL, b1 = NULL, period = NULL, theta = 100, tau = 1, years = 23, 
+                       beta_0 = -3.5, beta_1 = 6.86, vax = rep(0, 23), N1 = 20000, K = 50000, b_fixed = 0.001, output_df = TRUE)
+
+vax_smile_tests %>% 
+  pivot_longer(-week, names_to = "compartment", values_to = "n") %>% 
+  mutate(compartment = factor(compartment, levels = c("S", "M", "I", "L", "E", "Z"))) %>% 
+  ggplot(aes(x = week, y = n)) +
+  facet_wrap(~compartment, scales = "free") +
+  geom_path() +
+  theme_bw()
+
+```
+
+
+
+# Scenario 2
+with vaccine and no seasonal transmission 
+
+```{r}
+
+vax_smile_tests <- smile_fx(b0 = NULL, b1 = NULL, period = NULL, theta = 100, tau = 1, years = 23, 
+                       beta_0 = -3.5, beta_1 = 6.86, vax = vacc.pcts, N1 = 20000, K = 50000, b_fixed = 0.001, output_df = TRUE)
+
+vax_smile_tests %>% 
+  pivot_longer(-week, names_to = "compartment", values_to = "n") %>% 
+  mutate(compartment = factor(compartment, levels = c("S", "M", "I", "L", "E", "Z"))) %>% 
+  ggplot(aes(x = week, y = n)) +
+  facet_wrap(~compartment, scales = "free") +
+  geom_path() +
+  theme_bw()
+
+```
+# Scenario 3
+no vaccine and seasonal transmission 
+
+```{r}
+
+vax_smile_tests <- smile_fx(b0 = -30, b1 = 0.85, period = 3*52, theta = 100, tau = 1, years = 23, 
+                       beta_0 = -3.5, beta_1 = 6.86, vax = rep(0, 23), N1 = 20000, K = 50000, output_df = TRUE)
+
+vax_smile_tests %>% 
+  pivot_longer(-week, names_to = "compartment", values_to = "n") %>% 
+  mutate(compartment = factor(compartment, levels = c("S", "M", "I", "L", "E", "Z"))) %>% 
+  ggplot(aes(x = week, y = n)) +
+  facet_wrap(~compartment, scales = "free") +
+  geom_path() +
+  theme_bw()
+
+```
+
+# Scenario 4
+with vaccine and seasonal transmission 
+
+```{r}
+
+vax_smile_tests <- smile_fx(b0 = -30, b1 = 0.85, period = 3*52, theta = 100, tau = 1, years = 23, 
+                       beta_0 = -3.5, beta_1 = 6.86, vax = vacc.pcts, N1 = 20000, K = 50000, output_df = TRUE)
+
+vax_smile_tests %>% 
+  pivot_longer(-week, names_to = "compartment", values_to = "n") %>% 
+  mutate(compartment = factor(compartment, levels = c("S", "M", "I", "L", "E", "Z"))) %>% 
+  ggplot(aes(x = week, y = n)) +
+  facet_wrap(~compartment, scales = "free") +
+  geom_path() +
+  theme_bw()
+
+```
+
+```{r}
+b <- b.season(b0 = -30,b1 = 0.85,period = 3*52, 1:23*52 + 1)
+
+data.frame(year = 1:23, b = b) %>% 
+  ggplot(aes(x = year, y = b)) +
+  geom_path()
+```
+
+
+# What ifs.
+
+with 100% vaccine cover and seasonal transmission 
+
+```{r}
+
+vax_smile_tests <- smile_fx(b0 = -30, b1 = 0.85, period = 3*52, theta = 100, tau = 1, years = 23, 
+                       beta_0 = -5, beta_1 = 20, vax = rep(1, 23), N1 = 20000, K = 50000, output_df = TRUE)
+
+vax_smile_tests %>% 
+  pivot_longer(-week, names_to = "compartment", values_to = "n") %>% 
+  mutate(compartment = factor(compartment, levels = c("S", "M", "I", "L", "E", "Z"))) %>% 
+  ggplot(aes(x = week, y = n)) +
+  facet_wrap(~compartment, scales = "free") +
+  geom_path() +
+  theme_bw()
+
+```
+
+Vaccine function. the issue with this function is that it assumes zero survival under 0% vaccination, which isn't accurate since survival rates seem to be up to 88% without vaccination
+
+
+```{r}
+beta_0 = -3.5; beta_1 = 7.4
+
+vax.prcnt <- seq(0, 1, 0.001)
+surv.prob <- (1 / (1 + exp(-(beta_0 + beta_1 * vax.prcnt))))
+
+
+data.frame(vax.prcnt, surv.prob) %>% 
+  ggplot(aes(x = vax.prcnt, y = surv.prob)) +
+  geom_line() +
+  theme_bw()
+
+```
+
+
+alternative, use a parabola
+
+```{r}
+
+vax.prcnt <- seq(0, 1.2, 0.001)
+
+x = vax.prcnt
+a = -0.25
+h = 1
+k = 0.99
+surv.prob <- a*(x - h)^2 + k
+
+surv.prob <- -0.25 * (vax.prcnt - 1)^2 + 0.999
+
+data.frame(vax.prcnt, surv.prob) %>% 
+  ggplot(aes(x = vax.prcnt, y = surv.prob)) +
+  geom_line() +
+  geom_hline(yintercept = 1, color = "red") +
+  geom_hline(yintercept = 0.8, color = "blue") +
+  geom_vline(xintercept = 1, color = "red") +
+  theme_bw()
+
+
+```
+
+
+
