@@ -18,6 +18,41 @@ source(file = "../smile_main.R")
 
 # EPI Research Day
 
+We are trying to see how our model can help us understand disease dynamics in this northern province of Vietnam. The context for these simulations then is based on the Vietnam case. This leads us to have the following sets of parameters:
+
+## Seasonal forcing in transmission
+The model has an underlying sinusoidal function to estimate the probability of infection:
+
+```{r}
+nyears <- 23 # Using this because of the 23 years of data for Vietnam
+nweeks <- nyears*52
+b <- b.season(b0 = -30,b1 = 0.85, period = 3*52, t = 1:nweeks + 1)
+
+data.frame(week = 1:(23*52), b = b) %>% 
+  ggplot(aes(x = week, y = b)) +
+  geom_path() +
+  theme_bw() +
+  labs(y = "b - probability of transmission")
+```
+
+## Vaccination
+
+This is the survival probability curve we are assuming when incorporating vaccines
+
+```{r}
+beta_0 = -3.5; beta_1 = 7.4
+
+vax_prcnt <- seq(0, 1, 0.001)
+surv_prob <- (1 / (1 + exp(-(beta_0 + beta_1 * vax_prcnt))))
+
+
+data.frame(vax_prcnt, surv_prob) %>% 
+  ggplot(aes(x = vax_prcnt, y = surv_prob)) +
+  geom_line() +
+  theme_bw()
+
+```
+
 ```{r}
 years <- 23
 vacc.pcts<- c(0.34, 0.24, 0.37, 0.44, 0.44, 0.64, 0.71, 0.69, 0.73, 
@@ -100,31 +135,8 @@ vax_smile_tests %>%
 ```
 
 
-This is the seasonality we are assuming for transmission 
-
-```{r}
-b <- b.season(b0 = -30,b1 = 0.85,period = 3*52, 1:23*52 + 1)
-
-data.frame(year = 1:23, b = b) %>% 
-  ggplot(aes(x = year, y = b)) +
-  geom_path() +
-  theme_bw()
-```
-
-This is the survival probability curve we are assuming when incorporating vaccines 
-
-```{r}
-beta_0 = -3.5; beta_1 = 7.4
-
-vax.prcnt <- seq(0, 1, 0.001)
-surv.prob <- (1 / (1 + exp(-(beta_0 + beta_1 * vax.prcnt))))
 
 
-data.frame(vax.prcnt, surv.prob) %>% 
-  ggplot(aes(x = vax.prcnt, y = surv.prob)) +
-  geom_line() +
-  theme_bw()
 
-```
 
 
