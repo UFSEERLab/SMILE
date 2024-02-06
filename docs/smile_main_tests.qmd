@@ -256,7 +256,70 @@ bind_rows(og_stochastic, new_stochastic) %>%
   geom_line() +
   theme_minimal()
 ```
+Try to get the estimates from these stochastic sims:
 
+```{r}
+set.seed(123) 
+b0_start	<-	runif(1,min=-36,max=-24) 
+b1_start	<-	runif(1,min=0.656,max=0.984) 
+theta_start	<-	log(runif(1,min=8,max=12)) 
+tau_start	<-	log(runif(1,min=8,max=12))
+
+SMILE_obs <- stochastic_sims
+nreps <- length(SMILE_obs)
+
+hat_mat			<-	array(0,dim=c(nreps,5),dimnames=list(1:nreps
+															 ,c("tau","theta","b0","b1","loglik")))
+
+for(i in 1:nreps){
+	
+	hat_mat[i,]	<-	SMILE_param_estim(b0 = b0_start,
+	                                 b1 = b1_start,
+	                                 theta = theta_start,
+	                                 tau = tau_start,
+	                                 SMILE.obs=SMILE_obs[[i]],period=3*52)
+								}
+```
+
+Parameter estimates for each of the stochastic simulations we generated. All simulations used the values shown with the red line to be generated. 
+
+```{r}
+
+# estimates from the stochastic simulations
+hat_mat %>% as.data.frame() %>% rownames_to_column(var = "run") %>% 
+  pivot_longer(-run, names_to = "parameter") -> long_hatmat
+
+long_hatmat %>% 
+  filter(parameter == "b0") %>% 
+  ggplot(aes(x = value)) +
+  geom_density() +
+  geom_vline(xintercept = -30, color = "red") +
+  theme_classic() -> b0_plot
+
+long_hatmat %>% 
+  filter(parameter == "b1") %>% 
+  ggplot(aes(x = value)) +
+  geom_density() +
+  geom_vline(xintercept = 0.85, color = "red") +
+  theme_classic() -> b1_plot
+
+long_hatmat %>% 
+  filter(parameter == "theta") %>% 
+  ggplot(aes(x = value)) +
+  geom_density() +
+  geom_vline(xintercept = 10, color = "red") +
+  theme_classic() -> theta_plot
+
+long_hatmat %>% 
+  filter(parameter == "tau") %>% 
+  ggplot(aes(x = value)) +
+  geom_density() +
+  geom_vline(xintercept = 10, color = "red") +
+  theme_classic() -> tau_plot
+
+plot_grid(b0_plot, b1_plot, theta_plot, tau_plot, nrow = 2)
+
+```
 
 
 # Adding vaccine 
