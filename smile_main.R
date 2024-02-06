@@ -12,7 +12,7 @@ smile_fx <- function(b0,b1,period,theta,tau,years,
                      alpha =	1/52,
                      zeta_novax	=	0.88,
                      gamma = 0.9868,
-                     sigmaa = 0.92^(1/52),
+                     sigmaa = 1,
                      psi = 1,
                      N1 = 5000,
                      K = 5000,
@@ -22,6 +22,8 @@ smile_fx <- function(b0,b1,period,theta,tau,years,
                      beta_1 = NULL,
                      # To remove seasonality, give b a value
                      b_fixed = NULL,
+                     # To remove host age structuring, change to false
+                     age_struc = TRUE,
                      LIZ_init = 1, 
                      output_df = FALSE) {
   
@@ -58,9 +60,16 @@ smile_fx <- function(b0,b1,period,theta,tau,years,
     }
     
     lambda[tm1]	<-	lambda.t(theta=theta,tau=tau,b=b,E=E[tm1])
-    births.happen	<-	as.numeric(t%%52==0)
-    rep.prob	<-	rho_n(N[tm1], K)
     
+    if(age_struc == FALSE) {
+      births.happen = 0
+      rep.prob = 0
+    } else {
+      births.happen	<-	as.numeric(t%%52==0)
+      rep.prob	<-	rho_n(N[tm1], K)
+    }
+    
+
     S[t]	<-	(S[tm1]*(1-lambda[tm1]))*sigmaa + M[tm1]*sigmaa*1/52 + rep.prob*(N[tm1])*births.happen
     I[t]	<-	S[tm1]*lambda[tm1]
     M[t]	<-	I[tm1]*zeta[tm1] + M[tm1]*sigmaa*(1-(1/52))
