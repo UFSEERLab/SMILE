@@ -419,7 +419,7 @@ data.frame(vax.prcnt, surv.prob) %>%
   ggplot(aes(x = vax.prcnt, y = surv.prob)) +
   geom_line() +
   geom_hline(yintercept = 1, color = "red") +
-  geom_hline(yintercept = 0.8, color = "blue") +
+  geom_hline(yintercept = 0.88, color = "blue") +
   geom_vline(xintercept = 1, color = "red") +
   theme_bw()
 

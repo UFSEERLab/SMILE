@@ -1,17 +1,19 @@
 ---
 title: "EPI Research day"
-format: html
+format: pptx
 self-contained: true
+execute: 
+  echo: true
 ---
 
 
-```{r message=FALSE, warning=FALSE}
+```{r message=FALSE, warning=FALSE, echo=FALSE}
 library(tidyverse)
 library(cowplot)
 ```
 
 
-```{r}
+```{r echo=FALSE}
 source(file = "../smile_main.R")
 ```
 
@@ -27,7 +29,9 @@ The model has an underlying sinusoidal function to estimate the probability of i
 nyears <- 23 # Using this because of the 23 years of data for Vietnam
 nweeks <- nyears*52
 b <- b.season(b0 = -30,b1 = 0.85, period = 3*52, t = 1:nweeks + 1)
+```
 
+```{r echo=FALSE}
 data.frame(week = 1:(23*52), b = b) %>% 
   ggplot(aes(x = week, y = b)) +
   geom_path() +
@@ -35,40 +39,87 @@ data.frame(week = 1:(23*52), b = b) %>%
   labs(y = "b - probability of transmission")
 ```
 
+
 ## Vaccination
 
-This is the survival probability curve we are assuming when incorporating vaccines
+This is the survival probability curve we are assuming when incorporating vaccines. The red line shows the static 88% survival rate used in the original paper (probability of bison surviving spore exposure and developing immunity $\zeta$). The survival probability function used is 
 
+$$
+\zeta(vax) = \frac{1}{1 + \exp^{-(\beta_0 + \beta_1 \cdot vax)}}
+$$
+For the following values of $\beta_0$ and $\beta_1$
 ```{r}
-beta_0 = -3.5; beta_1 = 7.4
+my_beta_0 = -3.5; my_beta_1 = 15
+```
 
+```{r echo=FALSE}
 vax_prcnt <- seq(0, 1, 0.001)
-surv_prob <- (1 / (1 + exp(-(beta_0 + beta_1 * vax_prcnt))))
+surv_prob <- (1 / (1 + exp(-(my_beta_0 + my_beta_1 * vax_prcnt))))
 
 
 data.frame(vax_prcnt, surv_prob) %>% 
   ggplot(aes(x = vax_prcnt, y = surv_prob)) +
   geom_line() +
-  theme_bw()
-
+  geom_hline(yintercept = 0.88, color = "red") +
+  theme_bw() +
+  scale_x_continuous(labels = scales::label_percent(), breaks = seq(0, 1, 0.1)) +
+  labs(x = "Vaccination rate", y = "Survival Probability")
 ```
 
-```{r}
+
+
+These are the vaccination rates for the 23 years of data:
+```{r echo=FALSE}
 years <- 23
 vacc.pcts<- c(0.34, 0.24, 0.37, 0.44, 0.44, 0.64, 0.71, 0.69, 0.73, 
               0.72, 0.66, 0.60, 0.57, 0.27, 0.27, 0.16, 0.12, 0.12, 
               0.10, 0.08, 0.05, 0.05, 0.02)
+data.frame(year = 1:23, vacc.pcts) %>% 
+  ggplot(aes(x = year, y = vacc.pcts)) +
+  geom_point() +
+  geom_line() +
+  theme_bw() +
+  labs(y = "Vaccination Rate", x = "Year") +
+  scale_y_continuous(labels = scales::label_percent(), limits = c(0,1))
+```
+
+# Reproduction 
+
+::: {.smaller}
+Following the original paper, we set density dependent probability of reproduction based on the buffalo population in Vietnam with the same 0.41 average reproduction rate, but with a 20,000 buffalo population, and a 50,000 carrying capacity:
+:::
+
+```{r}
+rho_n	<-	function(N, K, rho=0.41){
+  rho/(1+(N/K)^(10))
+}
+
+N1 = 20000
+K = 50000
+
+rho_n(N=N1, K= K)
+
 ```
 
 
 # Scenario 1 
-no vaccine and no seasonal transmission 
+## No vaccine and no seasonal transmission.  
 
+No vaccine here means we need to settle on a survival probability $\zeta$, if using 0.88, the value used in Gomez et al, then we have to set `beta_0 = 1.999`
+
+```{r echo=FALSE}
+beta_0 = log(1/((1/0.88)-1)); beta_1 = 0; vax = 0
+1 / (1 + exp(-(beta_0 + beta_1 * vax)))
+```
+
+For b, we will use the same one from the original paper `b=0.001` which is the number of infections caused by 1 LIZ when there is no seasonality.
 ```{r}
-
 vax_smile_tests <- smile_fx(b0 = NULL, b1 = NULL, period = NULL, theta = 100, tau = 1, years = 23, 
-                       beta_0 = -3.5, beta_1 = 6.86, vax = rep(0, 23), N1 = 20000, K = 50000, b_fixed = 0.001, output_df = TRUE)
+                       beta_0 = log(1/((1/0.88)-1)), beta_1 = 0, vax = rep(0, 23),
+                       N1 = 20000, K = 50000, b_fixed = 0.001, output_df = TRUE)
+```
 
+```{r echo=FALSE}
 vax_smile_tests %>% 
   pivot_longer(-week, names_to = "compartment", values_to = "n") %>% 
   mutate(compartment = factor(compartment, levels = c("S", "M", "I", "L", "E", "Z"))) %>% 
@@ -76,19 +127,21 @@ vax_smile_tests %>%
   facet_wrap(~compartment, scales = "free") +
   geom_path() +
   theme_bw()
-
 ```
 
 
 
 # Scenario 2
-with vaccine and no seasonal transmission 
+## with vaccine and no seasonal transmission 
+In this case, we are using the vaccine data for the 23 years.
 
 ```{r}
 
 vax_smile_tests <- smile_fx(b0 = NULL, b1 = NULL, period = NULL, theta = 100, tau = 1, years = 23, 
-                       beta_0 = -3.5, beta_1 = 6.86, vax = vacc.pcts, N1 = 20000, K = 50000, b_fixed = 0.001, output_df = TRUE)
+                       beta_0 = my_beta_0, beta_1 = my_beta_1, vax = vacc.pcts, N1 = 20000, K = 50000, b_fixed = 0.001, output_df = TRUE)
+```
 
+```{r echo=FALSE}
 vax_smile_tests %>% 
   pivot_longer(-week, names_to = "compartment", values_to = "n") %>% 
   mutate(compartment = factor(compartment, levels = c("S", "M", "I", "L", "E", "Z"))) %>% 
@@ -96,16 +149,19 @@ vax_smile_tests %>%
   facet_wrap(~compartment, scales = "free") +
   geom_path() +
   theme_bw()
-
 ```
+
 # Scenario 3
-no vaccine and seasonal transmission 
+## No vaccine and seasonal transmission 
 
 ```{r}
 
 vax_smile_tests <- smile_fx(b0 = -30, b1 = 0.85, period = 3*52, theta = 100, tau = 1, years = 23, 
-                       beta_0 = -3.5, beta_1 = 6.86, vax = rep(0, 23), N1 = 20000, K = 50000, output_df = TRUE)
+                       beta_0 = log(1/((1/0.88)-1)), beta_1 = 0, vax = rep(0, 23), N1 = 20000, K = 50000, output_df = TRUE)
 
+``` 
+
+```{r echo=FALSE}
 vax_smile_tests %>% 
   pivot_longer(-week, names_to = "compartment", values_to = "n") %>% 
   mutate(compartment = factor(compartment, levels = c("S", "M", "I", "L", "E", "Z"))) %>% 
@@ -113,17 +169,20 @@ vax_smile_tests %>%
   facet_wrap(~compartment, scales = "free") +
   geom_path() +
   theme_bw()
-
 ```
+
 
 # Scenario 4
-with vaccine and seasonal transmission 
+## with vaccine and seasonal transmission 
 
 ```{r}
 
 vax_smile_tests <- smile_fx(b0 = -30, b1 = 0.85, period = 3*52, theta = 100, tau = 1, years = 23, 
-                       beta_0 = -3.5, beta_1 = 6.86, vax = vacc.pcts, N1 = 20000, K = 50000, output_df = TRUE)
+                       beta_0 = my_beta_0, beta_1 = my_beta_1, vax = vacc.pcts, N1 = 20000, K = 50000, output_df = TRUE)
 
+```
+
+```{r echo=FALSE}
 vax_smile_tests %>% 
   pivot_longer(-week, names_to = "compartment", values_to = "n") %>% 
   mutate(compartment = factor(compartment, levels = c("S", "M", "I", "L", "E", "Z"))) %>% 
@@ -131,7 +190,6 @@ vax_smile_tests %>%
   facet_wrap(~compartment, scales = "free") +
   geom_path() +
   theme_bw()
-
 ```
 
 
