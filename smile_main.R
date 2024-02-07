@@ -25,7 +25,8 @@ smile_fx <- function(b0,b1,period,theta,tau,years,
                      # To remove host age structuring, change to false
                      age_struc = TRUE,
                      stochastic = FALSE,
-                     LIZ_init = 1, 
+                     LIZ_init = 1,
+                     rho_pop = NULL,
                      output_df = FALSE) {
   
   if(is.null(vax) == FALSE) {
@@ -62,12 +63,16 @@ smile_fx <- function(b0,b1,period,theta,tau,years,
     
     lambda[tm1]	<-	lambda.t(theta=theta,tau=tau,b=b,E=E[tm1])
     
+    if(is.null(rho_pop) == TRUE) {
+      rho_pop = 0.41
+    }
+    
     if(age_struc == FALSE) {
       births.happen = 0
       rep.prob = 0
     } else {
       births.happen	<-	as.numeric(t%%52==0)
-      rep.prob	<-	rho_n(N[tm1], K)
+      rep.prob	<-	rho_n(N[tm1], K, rho_pop)
     }
     
     if(stochastic == TRUE) {
@@ -118,9 +123,9 @@ smile_fx <- function(b0,b1,period,theta,tau,years,
 }
 
 
-rho_n	<-	function(N, K){
+rho_n	<-	function(N, K, rho=0.41){
   
-  0.41/(1+(N/K)^(10))
+  rho/(1+(N/K)^(10))
   
 }
 
@@ -196,5 +201,8 @@ SMILE_param_estim	<-	function(b0,b1,theta,tau,period,SMILE.obs,method="BFGS"){
   return(results)
 }
 
+local_R0 <- function(tau, theta, b, E) {
+  (tau*b*E)/theta
+}
 
 
