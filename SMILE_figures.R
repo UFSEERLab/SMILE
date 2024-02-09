@@ -4,12 +4,14 @@ library(diagram)
 ## Conceptual diagram of the SMILE model
 # png("~/Dropbox/JuanPabloThesis/PostDoc/SMILE/Figures/Figure1.png",family="Times"
 # 			,width=8,height=8,units="in",res=300,type="cairo")
+png("docs/")
 par(mar=c(0,0,0,0),oma=c(0.5,0.5,0.5,0.5))
+
 plot(0,0,xlim=c(0,9.5),ylim=c(0,5.5),axes=FALSE,type="n")
 # Circles and text of compartments
 # Susceptible
-selfarrow(c(3.85,4.9),curve=c(0.35,0.35*0.6),lwd=1,code=1,path="L",arr.pos=0.58)
-text(3.5,4.9,expression(1-lambda(t)),cex=0.9)
+selfarrow(c(3.85,5),curve=c(0.35,0.35*0.6),lwd=1,code=1,path="L",arr.pos=0.58)
+text(3.5,5,expression(1-lambda(t)),cex=0.9)
 draw.circle(3.5,4.5,0.5,col="grey",border="grey")
 text(3.5,4.5,"S",cex=2,col="black")
 
