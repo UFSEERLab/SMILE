@@ -349,7 +349,7 @@ vax_smile_tests %>%
   filter(compartment %in% c("S", "L")) %>% 
   ggplot(aes(x = week, y = n, color = compartment, linetype = compartment)) +
   # facet_wrap(~compartment, scales = "free") +
-  geom_line(linewidth = 0.75) +
+  geom_line(linewidth = 0.7) +
   theme_bw() +
   scale_color_manual(values = c("red", "black")) +
   scale_linetype_manual(values = c("dashed", "solid")) +
