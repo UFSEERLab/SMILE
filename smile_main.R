@@ -201,7 +201,7 @@ SMILE_param_estim	<-	function(b0,b1,theta,tau,period,SMILE.obs,method="BFGS"){
   return(results)
 }
 
-local_R0 <- function(tau, theta, b, E) {
+calc_local_R0 <- function(tau, theta, b, E) {
   (tau*b*E)/theta
 }
 
