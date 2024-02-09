@@ -33,6 +33,19 @@ build_SMILE_plots <- function(smile_output_as_df) {
 ```
 
 
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+vietnam_data <- readxl::read_excel("../datafiles/vietnam_data.xlsx") %>% 
+  janitor::clean_names() %>% 
+  rownames_to_column(var = "n_year") %>% mutate(n_year = as.numeric(n_year))
+
+# vietnam_data %>% 
+#   ggplot(aes(x = n_year, y = buffalo_pop)) +
+#   geom_point() +
+#   theme_bw()
+```
+
+
+
 # Try parameters so outbreaks match what we see in Vietnam
 
 These are the parameters that were working for Tan to sort of recreate the shape of his outbreaks:
@@ -356,9 +369,9 @@ vax_smile_tests %>%
   labs(title = "Deaths and Susceptibles in a Vax scenario with seasonal transmission")
 
 ```
-When we incorporate both seasonality in transmission and vaccination rates, we observe a direct decrease in deaths and environmental pathogen when vaccination levels are high. As vaccination rates decrease, infections and deaths increase significantly.
+When we incorporate seasonality in transmission and vaccination rates, we observe a direct decrease in deaths and environmental pathogen when vaccination levels are high. As vaccination rates decrease, infections and deaths increase significantly.
 
-We can also look at the local R0 here over time, since the b and E change over time, and the force of infection:
+We can also look at the local R0 here over time and the force of infection since the b and E change over time.
 
 ```{r echo=FALSE}
 nweeks <- 23*52
@@ -421,21 +434,35 @@ data.frame(vax_prcnt, betas_0 = rep(my_betas_0, each = length(vax_prcnt)), betas
        subtitle = paste("Fixed beta_1 at", my_beta_1)) +
   scale_color_grey()
 ```
+
 ## Vaccination scenarios 
 
 Constant vaccination at 30%, 50%, 75% of animals under the three different survival curves.
 
 Variable vaccination following the Vietnam vaccine data.
 
+## Seasonality in transmission 
 
-Then, the seasonality of the outbreaks is not clear from the data, maybe some cases every 3-5 years, but none when vaccination was high, the again every 3ish years. The red line shows what we assume is the number of infections caused by 1 LIZ when $\frac{\tau}{\theta} = 0$ and there is no seasonality.
+Then, the seasonality of the outbreaks is not clear from the data, maybe some cases every 3-5 years, but none when vaccination was high, then again every 3ish years. The red line shows what we assume is the number of infections caused by 1 LIZ when $\frac{\tau}{\theta} = 0$ and there is no seasonality.
+
+```{r}
+vietnam_data %>% 
+  pivot_longer(-c(n_year, year, vaccine_coverage), names_to = "my_category") %>% 
+  filter(!my_category %in% c("vaccine_doses", "human_cases", "total_animal_cases", "total_pop_in_risk_area")) %>% 
+  tidyr::separate_wider_delim(., my_category, delim = "_", names = c("species", "case_pop")) %>% 
+  ggplot(aes(x = year, y = value, color = species)) +
+  facet_wrap(~case_pop, scales = "free") +
+  geom_line() +
+  theme_bw()
+```
+
 
 ```{r}
 nyears <- 23 # Using this because of the 23 years of data for Vietnam
 nweeks <- nyears*52
 my_b0 = -30
 my_b1 = 0.85
-my_b <- b.season(b0 = my_b0, b1 = my_b1, period = 3*52, t = 0:nweeks + 1)
+my_b <- b.season(b0 = my_b0, b1 = my_b1, period = 4*52, t = 0:nweeks + 1)
 ```
 
 ```{r echo=FALSE}
@@ -448,6 +475,93 @@ data.frame(week = 0:(23*52), b = my_b) %>%
   labs(x = "Year") +
   labs(y = "b - probability of transmission")
 ```
+
+# POSTER FIGURES 
+
+## Survival curves 
+
+```{r echo=FALSE}
+my_beta_1 = 10
+my_betas_0 = seq(-11, 5, length.out = 20)
+sim_betas_0 <- c(-10, -3, 1.5)
+
+vax_prcnt <- seq(0, 1, 0.001)
+
+data.frame(vax_prcnt, betas_0 = rep(sim_betas_0, each = length(vax_prcnt)), betas_1 = my_beta_1) %>% 
+  mutate(surv_prob = (1 / (1 + exp(-(betas_0 + betas_1 * vax_prcnt))))) -> sim_survival_curves
+
+# png("research_day_figs/survival_curves.png", width = 12 , height = 8, units = "in", res = 300, type = "windows")
+data.frame(vax_prcnt, betas_0 = rep(my_betas_0, each = length(vax_prcnt)), betas_1 = my_beta_1)  %>% 
+  mutate(surv_prob = (1 / (1 + exp(-(betas_0 + betas_1 * vax_prcnt))))) %>% 
+  ggplot(aes(x = vax_prcnt, y = surv_prob, color = betas_0, fill = betas_0)) +
+  geom_line(linewidth = 0.8) +
+  geom_path(data = sim_survival_curves, aes(x = vax_prcnt, y = surv_prob, group = betas_0), color = "white", linewidth = 0.9) +
+  # geom_hline(yintercept = 0.88, color = "red", linewidth = 0.9) +
+  scale_color_viridis_c(option = "A") +
+  scale_fill_viridis_c(option = "A") +
+  theme_bw() +
+  scale_x_continuous(labels = scales::label_percent(), breaks = seq(0, 1, 0.1)) +
+  labs(x = "Vaccination rate", y = "Survival Probability", color = expression(beta[0]),
+       title = expression("Survival probability curves with fixed"~beta[1]~"=10"))
+# dev.off()
+  
+# For some reason, this code doesn't work. It will save the figure with some grey weirdness on top
+# ggsave("research_day_figs/survival_curves.png", dpi = 300, width = 7, height = 5, bg = "white")
+
+
+```
+# Individual curves 
+
+```{r echo=FALSE}
+surv_palette <- viridisLite::viridis(12, option = "A")
+surv_3_cols <- surv_palette[c(2,6,9)]
+# scales::show_col(surv_3_cols)
+
+png("research_day_figs/3survival_curves.png", width = 13 , height = 8, units = "in", res = 300, type = "windows")
+data.frame(vax_prcnt, betas_0 = rep(sim_betas_0, each = length(vax_prcnt)), betas_1 = my_beta_1) %>% 
+  mutate(surv_prob = (1 / (1 + exp(-(betas_0 + betas_1 * vax_prcnt))))) %>% 
+  mutate(betas_0 = factor(betas_0)) %>%
+  ggplot(aes(x = vax_prcnt, y = surv_prob, color = betas_0)) +
+  geom_line(linewidth = 1) +
+  # geom_hline(yintercept = 0.88, color = "red", linewidth = 0.9) +
+  theme_bw() +
+  scale_x_continuous(labels = scales::label_percent(), breaks = seq(0, 1, 0.1)) +
+ labs(x = "Vaccination rate", y = "Survival Probability", color = expression(beta[0]),
+       title = expression("Survival probability curves with fixed"~beta[1]~"=10")) +
+  scale_color_manual(values = surv_3_cols)
+
+dev.off()
+```
+
+
+# No VAX SCENARIOS 
+
+```{r}
+novax_noseason <- smile_fx(theta = 10, tau = 10, years = 23,
+                            # fixed survival probability and fixed b
+                            zeta_novax = 0.8, b_fixed = 0.001,
+                            # parameters for host population dynamics include births and deaths
+                            N1 = 20000, K = 50000, rho_pop = 0.36, sigmaa = 0.92^(1/52),
+                            output_df = TRUE)
+
+novax_noseason %>% build_SMILE_plots()
+
+novax_yesseason <- smile_fx(theta = 10, tau = 10, years = 23,
+                            # fixed survival probability
+                            zeta_novax = 0.8,
+                            # Parameters to induce seasonal forcing in transmission
+                            b0 = -30, b1 = 0.85, period = 3*52,
+                            # parameters for host population dynamics include births and deaths
+                            N1 = 20000, K = 50000, rho_pop = 0.36, sigmaa = 0.92^(1/52),
+                            output_df = TRUE)
+novax_yesseason %>% build_SMILE_plots()
+
+
+
+
+
+```
+
 
 
 
