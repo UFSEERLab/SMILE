@@ -517,7 +517,7 @@ surv_palette <- viridisLite::viridis(12, option = "A")
 surv_3_cols <- surv_palette[c(2,6,9)]
 # scales::show_col(surv_3_cols)
 
-png("research_day_figs/3survival_curves.png", width = 13 , height = 8, units = "in", res = 300, type = "windows")
+# png("research_day_figs/3survival_curves.png", width = 13 , height = 8, units = "in", res = 300, type = "windows")
 data.frame(vax_prcnt, betas_0 = rep(sim_betas_0, each = length(vax_prcnt)), betas_1 = my_beta_1) %>% 
   mutate(surv_prob = (1 / (1 + exp(-(betas_0 + betas_1 * vax_prcnt))))) %>% 
   mutate(betas_0 = factor(betas_0)) %>%
@@ -530,13 +530,13 @@ data.frame(vax_prcnt, betas_0 = rep(sim_betas_0, each = length(vax_prcnt)), beta
        title = expression("Survival probability curves with fixed"~beta[1]~"=10")) +
   scale_color_manual(values = surv_3_cols)
 
-dev.off()
+# dev.off()
 ```
 
 
 # No VAX SCENARIOS 
 
-```{r}
+```{r fig.width=12, fig.height=7}
 novax_noseason <- smile_fx(theta = 10, tau = 10, years = 23,
                             # fixed survival probability and fixed b
                             zeta_novax = 0.8, b_fixed = 0.001,
@@ -544,20 +544,149 @@ novax_noseason <- smile_fx(theta = 10, tau = 10, years = 23,
                             N1 = 20000, K = 50000, rho_pop = 0.36, sigmaa = 0.92^(1/52),
                             output_df = TRUE)
 
-novax_noseason %>% build_SMILE_plots()
+# novax_noseason %>% build_SMILE_plots()
 
 novax_yesseason <- smile_fx(theta = 10, tau = 10, years = 23,
                             # fixed survival probability
                             zeta_novax = 0.8,
                             # Parameters to induce seasonal forcing in transmission
-                            b0 = -30, b1 = 0.85, period = 3*52,
+                            b0 = -30, b1 = 0.85, period = 4*52,
                             # parameters for host population dynamics include births and deaths
                             N1 = 20000, K = 50000, rho_pop = 0.36, sigmaa = 0.92^(1/52),
                             output_df = TRUE)
-novax_yesseason %>% build_SMILE_plots()
+# novax_yesseason %>% build_SMILE_plots()
+
+novax_noseason %>% 
+  pivot_longer(-week, names_to = "compartment", values_to = "n") %>% 
+  mutate(compartment = factor(compartment, levels = c("S", "M", "I", "L", "E", "Z"))) %>% 
+  mutate(seasonality = "no") -> long_novax_noseason
+
+novax_yesseason %>% 
+  pivot_longer(-week, names_to = "compartment", values_to = "n") %>% 
+  mutate(compartment = factor(compartment, levels = c("S", "M", "I", "L", "E", "Z"))) %>% 
+  mutate(seasonality = "yes") -> long_novax_yesseason
+
+png("research_day_figs/novax_scenarios_SMILE.png", width = 13 , height = 8, units = "in", res = 300, type = "windows")
+bind_rows(long_novax_noseason, long_novax_yesseason) %>% 
+  # filter(compartment %in% c("S", "L")) %>% 
+  ggplot(aes(x = week, y = n, color = seasonality)) +
+  facet_wrap(~compartment, scales = "free") +
+  geom_line(linewidth = 0.8) +
+  theme_bw() +
+  scale_color_manual(values = c("#E95562FF", "#120D32FF")) +
+  # scale_linetype_manual(values = c("dashed", "solid")) +
+  labs(title = "Deaths and Susceptibles under no vaccination", 
+       y = "Number of individuals")
+dev.off()
+
+png("research_day_figs/novax_scenarios_SL.png", width = 13 , height = 8, units = "in", res = 300, type = "windows")
+bind_rows(long_novax_noseason, long_novax_yesseason) %>% 
+  filter(compartment %in% c("S", "L")) %>%
+  ggplot(aes(x = week, y = n, color = seasonality)) +
+  facet_wrap(~compartment, scales = "free") +
+  geom_line(linewidth = 0.8) +
+  theme_bw() +
+  scale_color_manual(values = c("#E95562FF", "#120D32FF")) +
+  # scale_linetype_manual(values = c("dashed", "solid")) +
+  labs(title = "Deaths and Susceptibles under no vaccination", 
+       y = "Number of individuals")
+dev.off()
 
 
+```
 
+# Survival probability for each year given vaccination data 
+
+```{r echo=FALSE}
+surv_palette <- viridisLite::viridis(12, option = "A")
+surv_3_cols <- surv_palette[c(2,6,9)]
+# scales::show_col(surv_3_cols)
+
+# png("research_day_figs/3survival_curves_w_vax.png", width = 13 , height = 8, units = "in", res = 300, type = "windows")
+
+data.frame(n_weeks = 1:(23*52), vax_rates = rep(vacc.pcts, each=52), betas_0 = rep(sim_betas_0, each = length(vax_rates)), betas_1 = my_beta_1) %>% 
+  mutate(zeta = (1 / (1 + exp(-(betas_0 + betas_1 * vax_rates))))) %>% 
+  mutate(betas_0 = factor(betas_0)) %>%
+  ggplot(aes(x = n_weeks, y = zeta, color = betas_0)) +
+  geom_line(linewidth = 1) +
+  # geom_hline(yintercept = 0.88, color = "red", linewidth = 0.9) +
+  theme_bw() +
+  # scale_x_continuous(labels = scales::label_percent(), breaks = seq(0, 1, 0.1)) +
+ labs(x = "Week", y = expression(zeta), color = expression(beta[0]),
+       title = expression("Survival probability given vaccination data under three different survival curves")) +
+  scale_color_manual(values = surv_3_cols)
+
+# dev.off()
+
+```
+
+# VAX SCENARIOS 
+
+```{r}
+vax_noseason_low_surv <- smile_fx(theta = 10, tau = 10, years = 23,
+                            # fixed b for no seasonality
+                            b_fixed = 0.001,
+                            # parameters for survival curve with varying vaccination levels
+                            beta_0 = -10, beta_1 = 10, vax = vacc.pcts,
+                            # parameters for host population dynamics include births and deaths
+                            N1 = 20000, K = 50000, rho_pop = 0.36, sigmaa = 0.92^(1/52),
+                            output_df = TRUE)
+
+vax_noseason_med_surv <- smile_fx(theta = 10, tau = 10, years = 23,
+                            # fixed b for no seasonality
+                            b_fixed = 0.001,
+                            # parameters for survival curve with varying vaccination levels
+                            beta_0 = -3, beta_1 = 10, vax = vacc.pcts,
+                            # parameters for host population dynamics include births and deaths
+                            N1 = 20000, K = 50000, rho_pop = 0.36, sigmaa = 0.92^(1/52),
+                            output_df = TRUE)
+
+vax_noseason_high_surv <- smile_fx(theta = 10, tau = 10, years = 23,
+                            # fixed b for no seasonality
+                            b_fixed = 0.001,
+                            # parameters for survival curve with varying vaccination levels
+                            beta_0 = 1.5, beta_1 = 10, vax = vacc.pcts,
+                            # parameters for host population dynamics include births and deaths
+                            N1 = 20000, K = 50000, rho_pop = 0.36, sigmaa = 0.92^(1/52),
+                            output_df = TRUE)
+
+vax_season_low_survival <- smile_fx(theta = 10, tau = 10, years = 23,
+                            # Parameters to induce seasonal forcing in transmission
+                            b0 = -30, b1 = 0.85, period = 3*52,
+                            # parameters for survival curve with varying vaccination levels
+                            beta_0 = -10, beta_1 = 10, vax = vacc.pcts,
+                            # parameters for host population dynamics include births and deaths
+                            N1 = 20000, K = 50000, rho_pop = 0.36, sigmaa = 0.92^(1/52),
+                            output_df = TRUE)
+
+vax_season_med_survival <- smile_fx(theta = 10, tau = 10, years = 23,
+                            # Parameters to induce seasonal forcing in transmission
+                            b0 = -30, b1 = 0.85, period = 3*52,
+                            # parameters for survival curve with varying vaccination levels
+                            beta_0 = -3, beta_1 = 10, vax = vacc.pcts,
+                            # parameters for host population dynamics include births and deaths
+                            N1 = 20000, K = 50000, rho_pop = 0.36, sigmaa = 0.92^(1/52),
+                            output_df = TRUE)
+
+vax_season_high_survival <- smile_fx(theta = 10, tau = 10, years = 23,
+                            # Parameters to induce seasonal forcing in transmission
+                            b0 = -30, b1 = 0.85, period = 3*52,
+                            # parameters for survival curve with varying vaccination levels
+                            beta_0 = 1.5, beta_1 = 10, vax = vacc.pcts,
+                            # parameters for host population dynamics include births and deaths
+                            N1 = 20000, K = 50000, rho_pop = 0.36, sigmaa = 0.92^(1/52),
+                            output_df = TRUE)
+
+# make long format:
+
+make_smile_long <- function(smile_df) {
+  smile_df %>% 
+  pivot_longer(-week, names_to = "compartment", values_to = "n") %>% 
+  mutate(compartment = factor(compartment, levels = c("S", "M", "I", "L", "E", "Z")))
+}
+
+bind_rows(vax_noseason_low_survival %>% make_smile_long() %>% mutate(seasonality = "no", survival = "low"),
+          vax_noseason_med_survival %>% make_smile_long() %>% mutate(seasonality = "no", survival = "med"))
 
 
 ```
