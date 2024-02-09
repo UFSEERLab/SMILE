@@ -358,6 +358,38 @@ vax_smile_tests %>%
 ```
 When we incorporate both seasonality in transmission and vaccination rates, we observe a direct decrease in deaths and environmental pathogen when vaccination levels are high. As vaccination rates decrease, infections and deaths increase significantly.
 
+We can also look at the local R0 here over time, since the b and E change over time, and the force of infection:
+
+```{r echo=FALSE}
+nweeks <- 23*52
+my_b <- b.season(b0 = -30, b1 = 0.85, period = 3*52,t= 0:nweeks)
+my_E <- vax_smile_tests$E
+
+local_R0 <- calc_local_R0(tau = 10, theta = 10, b = my_b, E = my_E)
+
+data.frame(weeks = 0:nweeks, R0 = local_R0) %>% 
+  ggplot(aes(x = weeks, y = R0)) +
+  # geom_point() +
+  geom_line() +
+  theme_bw() +
+  labs(title = "Local R0") -> local_R0_plot
+
+my_theta <- 10
+my_tau <- 10
+seasonal_foi <- lambda.t(theta= 10, tau = 10, b = my_b, E = my_E)
+
+
+data.frame(weeks = 0:nweeks, FOI = seasonal_foi) %>%
+  ggplot(aes(x = weeks, y = FOI)) +
+  # geom_point() +
+  geom_line() +
+  theme_bw() +
+  labs(title = "Seasonal FOI", y = "lambda(t)") -> seasonal_foi_plot
+
+plot_grid(local_R0_plot, seasonal_foi_plot, ncol = 2)
+
+```
+
 
 # Exploring
 
@@ -396,14 +428,13 @@ Constant vaccination at 30%, 50%, 75% of animals under the three different survi
 Variable vaccination following the Vietnam vaccine data.
 
 
-
-Then, the seasonality of the outbreaks is not clear from the data, maybe some cases every 3-5 years, but none when vaccination was high, the again every 3ish years. The red line shows the number of infections caused by 1 LIZ when $\frac{\tau}{\theta} = 0$ and there is no seasonality. Choosing parameters here that will not make seasonality a little weaker, so still seasonal but not as strong.
+Then, the seasonality of the outbreaks is not clear from the data, maybe some cases every 3-5 years, but none when vaccination was high, the again every 3ish years. The red line shows what we assume is the number of infections caused by 1 LIZ when $\frac{\tau}{\theta} = 0$ and there is no seasonality.
 
 ```{r}
 nyears <- 23 # Using this because of the 23 years of data for Vietnam
 nweeks <- nyears*52
 my_b0 = -30
-my_b1 = 0.8
+my_b1 = 0.85
 my_b <- b.season(b0 = my_b0, b1 = my_b1, period = 3*52, t = 0:nweeks + 1)
 ```
 
@@ -419,58 +450,6 @@ data.frame(week = 0:(23*52), b = my_b) %>%
 ```
 
 
-Now look at the full dynamics. We observe here some big seasonal peaks, given the seasonality every three years. We see those population crashes and recoveries. We also see that the number of spores in the environment is related to survival probabilities, which again, are related to vaccination rates, but note they are all pretty high. This means most of the population gets infected, but they don't all die. 
-
-```{r}
-
-vax_smile_tests <- smile_fx(b0 = my_b0, b1 = my_b1, period = 3*52, theta = 100, tau = 1, years = 23, 
-                       beta_0 = my_beta_0 , beta_1 = my_beta_1, vax = vacc.pcts, N1 = 20000, K = 50000,
-                       rho_pop = 0.36, output_df = TRUE, LIZ_init = 10, sigmaa = 1)
-
-```
-
-
-```{r echo=FALSE}
-vax_smile_tests %>% 
-  pivot_longer(-week, names_to = "compartment", values_to = "n") %>% 
-  mutate(compartment = factor(compartment, levels = c("S", "M", "I", "L", "E", "Z"))) %>% 
-  ggplot(aes(x = week, y = n)) +
-  facet_wrap(~compartment, scales = "free") +
-  geom_path() +
-  theme_bw()
-```
-
-We can also look at the local R0 here over time, since the b and E change over time, and the force of infection:
-
-```{r echo=FALSE}
-nweeks <- 23*52
-my_b <- b.season(b0 = my_b0, b1 = my_b1, period = 3*52,t= 0:nweeks)
-my_E <- vax_smile_tests$E
-
-local_R0 <- calc_local_R0(tau = 10, theta = 1, b = my_b, E = my_E)
-
-data.frame(weeks = 0:nweeks, R0 = local_R0) %>% 
-  ggplot(aes(x = weeks, y = R0)) +
-  # geom_point() +
-  geom_line() +
-  theme_bw() +
-  labs(title = "Local R0") -> local_R0_plot
-
-my_theta <- 100
-my_tau <- 1
-seasonal_foi <- lambda.t(theta= my_theta, tau = my_tau, b = my_b, E = my_E)
-
-
-data.frame(weeks = 0:nweeks, FOI = seasonal_foi) %>%
-  ggplot(aes(x = weeks, y = FOI)) +
-  # geom_point() +
-  geom_line() +
-  theme_bw() +
-  labs(title = "Seaonal FOI") -> seasonal_foi_plot
-
-plot_grid(local_R0_plot, seasonal_foi_plot, ncol = 2)
-
-```
 
 # ARCHIVED 
 
