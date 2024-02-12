@@ -33,7 +33,7 @@ build_SMILE_plots <- function(smile_output_as_df) {
 ```
 
 
-```{r echo=FALSE, warning=FALSE, message=FALSE, eval=FALSE}
+```{r echo=FALSE, warning=FALSE, message=FALSE}
 vietnam_data <- readxl::read_excel("../datafiles/vietnam_data.xlsx") %>% 
   janitor::clean_names() %>% 
   rownames_to_column(var = "n_year") %>% mutate(n_year = as.numeric(n_year))
@@ -453,7 +453,10 @@ vietnam_data %>%
   ggplot(aes(x = year, y = value, color = species)) +
   facet_wrap(~case_pop, scales = "free") +
   geom_line() +
-  theme_bw()
+  theme_bw() +
+  scale_x_continuous(n.breaks = 12) +
+  theme(axis.text.x = element_text(angle = 90))
+
 ```
 
 
@@ -495,7 +498,7 @@ data.frame(vax_prcnt, betas_0 = rep(my_betas_0, each = length(vax_prcnt)), betas
   mutate(surv_prob = (1 / (1 + exp(-(betas_0 + betas_1 * vax_prcnt))))) %>% 
   ggplot(aes(x = vax_prcnt, y = surv_prob, color = betas_0, fill = betas_0)) +
   geom_line(linewidth = 0.8) +
-  geom_path(data = sim_survival_curves, aes(x = vax_prcnt, y = surv_prob, group = betas_0), color = "white", linewidth = 0.9) +
+  geom_path(data = sim_survival_curves, aes(x = vax_prcnt, y = surv_prob, group = betas_0), color = "grey", linewidth = 1.5) +
   # geom_hline(yintercept = 0.88, color = "red", linewidth = 0.9) +
   scale_color_viridis_c(option = "A") +
   scale_fill_viridis_c(option = "A") +
@@ -506,7 +509,7 @@ data.frame(vax_prcnt, betas_0 = rep(my_betas_0, each = length(vax_prcnt)), betas
 # dev.off()
   
 # For some reason, this code doesn't work. It will save the figure with some grey weirdness on top
-# ggsave("research_day_figs/survival_curves.png", dpi = 300, width = 7, height = 5, bg = "white")
+# ggsave("research_day_figs/survival_curves.png", dpi = 300, width = 9, height = 5, bg = "white")
 
 
 ```
@@ -631,17 +634,54 @@ data.frame(n_weeks = 1:(23*52), vax_rates = rep(vacc.pcts, each=52), betas_0 = r
   mutate(zeta = (1 / (1 + exp(-(betas_0 + betas_1 * vax_rates))))) %>% 
   mutate(betas_0 = factor(betas_0)) %>%
   ggplot(aes(x = n_weeks, y = zeta, color = betas_0)) +
-  geom_line(linewidth = 1) +
+  geom_line(linewidth = 2) +
   # geom_hline(yintercept = 0.88, color = "red", linewidth = 0.9) +
   theme_bw() +
   # scale_x_continuous(labels = scales::label_percent(), breaks = seq(0, 1, 0.1)) +
  labs(x = "Week", y = expression(zeta), color = expression(beta[0]),
-       title = expression("Survival probability given vaccination data under three different survival curves")) +
+       # title = expression("Survival probability given vaccination data under three different survival curves")
+      ) +
   scale_color_manual(values = surv_3_cols)
+
+ggsave("research_day_figs/3survival_curves_w_vax.png")
 
 # dev.off()
 
 ```
+
+```{r}
+# scales::show_col(viridisLite::viridis(3, begin = 0.5, end = 0.8, option = "A"))
+
+vietnam_data %>% 
+  select(year, buffalo_cases, cattle_cases, horse_cases, total_animal_cases) %>% 
+  mutate(year = factor(year, levels = 1991:2013)) %>%
+  pivot_longer(-c(year, total_animal_cases), names_to = "species", values_to = "cases") %>% 
+  mutate(species = str_remove(species, "_cases")) -> case_data
+
+vietnam_data %>% 
+  select(year, vaccine_coverage) %>% 
+  mutate(year = factor(year, levels = 1991:2013)) -> vax_data 
+
+case_data %>% 
+  ggplot(aes(x = year, y = cases/10)) +
+  geom_col(data = vax_data, aes(x = year, y = vaccine_coverage), width = 0.5, color = "lightgrey", fill = "lightgrey") +
+  geom_text(data = vax_data, aes(x = year, y = vaccine_coverage, label = paste0(round(vaccine_coverage, 2)*100, "%")), vjust = -0.5, size = 2.5) +
+  geom_path(aes(color = species, group = species, linetype = species), size = 1.2, alpha = 0.8) +
+  theme_bw() +
+  labs(y = "Vaccine coverage") +
+  scale_y_continuous(label = scales::label_percent(), limits = c(0, 1), sec.axis = sec_axis(~ . * 10, name = "Number of cases", breaks = 0:10)) + 
+  scale_linetype_manual(values = c("solid", "longdash", "twodash")) +
+  # scale_color_manual(values = c("#120D32FF", "#331068FF", "#7D2482FF")) +
+  scale_color_manual(values = viridisLite::viridis(3, begin = 0.5, end = 0.8, option = "A")) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5),
+        legend.position = c(0.9, 0.85), 
+        legend.background = element_rect(color = "grey"),
+        legend.title = element_blank())
+
+
+ggsave("research_day_figs/vax_data_cases.png",width = 9, height = 4.5)
+```
+
 
 # VAX SCENARIOS 
 
@@ -678,7 +718,8 @@ vax_noseason_low_surv <- smile_fx(theta = my_theta, tau = my_tau, years = 23,
                             N1 = 20000, K = 50000, rho_pop = 0.36, sigmaa = 0.92^(1/52),
                             output_df = TRUE)
 vax_noseason_low_surv %>% build_SMILE_plots()
-vax_noseason_low_surv %>% build_SL_plot()
+ggsave("research_day_figs/noseason_low_surv_det.png")
+# vax_noseason_low_surv %>% build_SL_plot()
 
 vax_noseason_med_surv <- smile_fx(theta = my_theta, tau = my_tau, years = 23,
                             # fixed b for no seasonality
@@ -689,6 +730,7 @@ vax_noseason_med_surv <- smile_fx(theta = my_theta, tau = my_tau, years = 23,
                             N1 = 20000, K = 50000, rho_pop = 0.36, sigmaa = 0.92^(1/52),
                             output_df = TRUE)
 vax_noseason_med_surv %>% build_SMILE_plots()
+ggsave("research_day_figs/noseason_med_surv_det.png")
 
 vax_noseason_high_surv <- smile_fx(theta = my_theta, tau = my_tau, years = 23,
                             # fixed b for no seasonality
@@ -699,6 +741,7 @@ vax_noseason_high_surv <- smile_fx(theta = my_theta, tau = my_tau, years = 23,
                             N1 = 20000, K = 50000, rho_pop = 0.36, sigmaa = 0.92^(1/52),
                             output_df = TRUE)
 vax_noseason_high_surv %>% build_SMILE_plots()
+ggsave("research_day_figs/noseason_high_surv_det.png")
 
 vax_season_low_surv <- smile_fx(theta = my_theta, tau = my_tau, years = 23,
                             # Parameters to induce seasonal forcing in transmission
@@ -709,6 +752,7 @@ vax_season_low_surv <- smile_fx(theta = my_theta, tau = my_tau, years = 23,
                             N1 = 20000, K = 50000, rho_pop = 0.36, sigmaa = 0.92^(1/52),
                             output_df = TRUE)
 vax_season_low_surv %>% build_SMILE_plots()
+ggsave("research_day_figs/season_low_surv_det.png")
 
 vax_season_med_surv <- smile_fx(theta = my_theta, tau = my_tau, years = 23,
                             # Parameters to induce seasonal forcing in transmission
@@ -719,6 +763,7 @@ vax_season_med_surv <- smile_fx(theta = my_theta, tau = my_tau, years = 23,
                             N1 = 20000, K = 50000, rho_pop = 0.36, sigmaa = 0.92^(1/52),
                             output_df = TRUE)
 vax_season_med_surv %>% build_SMILE_plots()
+ggsave("research_day_figs/season_med_surv_det.png")
 
 vax_season_high_surv <- smile_fx(theta = my_theta, tau = my_tau, years = 23,
                             # Parameters to induce seasonal forcing in transmission
@@ -729,6 +774,8 @@ vax_season_high_surv <- smile_fx(theta = my_theta, tau = my_tau, years = 23,
                             N1 = 20000, K = 50000, rho_pop = 0.36, sigmaa = 0.92^(1/52),
                             output_df = TRUE)
 vax_season_high_surv%>% build_SMILE_plots()
+ggsave("research_day_figs/season_high_surv_det.png")
+
 
 # make long format:
 
@@ -864,6 +911,283 @@ data.frame(weeks = 0:nweeks, R0 = local_R0) %>%
   labs(title = "Local R0") -> local_R0_plot
 ```
 
+# STOCHASTIC SIMULATIONS 
+
+```{r echo=FALSE}
+
+n_stoch_sims <- 100
+# NO SEASONAL FORCING
+vax_noseason_low_surv_stoch	<-	NULL
+for(i in 1:n_stoch_sims){
+  my_stoch_sim <- smile_fx(theta = my_theta, tau = my_tau, years = 23,
+                           # fixed b for no seasonality
+                           b_fixed = my_b_fixed,
+                           # parameters for survival curve with varying vaccination levels
+                           beta_0 = -10, beta_1 = 10, vax = vacc.pcts,
+                           # parameters for host population dynamics include births and deaths
+                           N1 = 20000, K = 50000, rho_pop = 0.36, sigmaa = 0.92^(1/52),
+                           output_df = TRUE, stochastic = TRUE) %>% mutate(sim = paste0("sim", i))
+  vax_noseason_low_surv_stoch <- bind_rows(vax_noseason_low_surv_stoch, my_stoch_sim)
+  
+}
+
+
+vax_noseason_med_surv_stoch <- NULL
+for(i in 1:n_stoch_sims){
+  my_stoch_sim <- smile_fx(theta = my_theta, tau = my_tau, years = 23,
+                           # fixed b for no seasonality
+                           b_fixed = my_b_fixed,
+                           # parameters for survival curve with varying vaccination levels
+                           beta_0 = -3, beta_1 = 10, vax = vacc.pcts,
+                           # parameters for host population dynamics include births and deaths
+                           N1 = 20000, K = 50000, rho_pop = 0.36, sigmaa = 0.92^(1/52),
+                           output_df = TRUE, stochastic = TRUE) %>% mutate(sim = paste0("sim", i))
+  vax_noseason_med_surv_stoch <- bind_rows(vax_noseason_med_surv_stoch, my_stoch_sim)
+  
+}
+
+vax_noseason_high_surv_stoch <- NULL
+for(i in 1:n_stoch_sims){
+  my_stoch_sim <- smile_fx(theta = my_theta, tau = my_tau, years = 23,
+                                 # fixed b for no seasonality
+                                b_fixed = my_b_fixed,
+                                # parameters for survival curve with varying vaccination levels
+                                beta_0 = 1.5, beta_1 = 10, vax = vacc.pcts,
+                                # parameters for host population dynamics include births and deaths
+                                N1 = 20000, K = 50000, rho_pop = 0.36, sigmaa = 0.92^(1/52),
+                                output_df = TRUE, stochastic = TRUE) %>% mutate(sim = paste0("sim", i))
+  vax_noseason_high_surv_stoch <- bind_rows(vax_noseason_high_surv_stoch, my_stoch_sim)
+                           
+}
+
+# SEASONAL 
+
+vax_season_low_surv_stoch <- NULL
+for(i in 1:n_stoch_sims){
+  my_stoch_sim <- smile_fx(theta = my_theta, tau = my_tau, years = 23,
+                           # Parameters to induce seasonal forcing in transmission
+                           b0 = -30, b1 = 0.85, period = 3*52,
+                           # parameters for survival curve with varying vaccination levels
+                           beta_0 = -10, beta_1 = 10, vax = vacc.pcts,
+                           # parameters for host population dynamics include births and deaths
+                           N1 = 20000, K = 50000, rho_pop = 0.36, sigmaa = 0.92^(1/52),
+                           output_df = TRUE, stochastic = TRUE) %>% mutate(sim = paste0("sim", i))
+  vax_season_low_surv_stoch <- bind_rows(vax_season_low_surv_stoch, my_stoch_sim)
+  
+}
+
+vax_season_med_surv_stoch <- NULL
+for(i in 1:n_stoch_sims){
+  my_stoch_sim <- smile_fx(theta = my_theta, tau = my_tau, years = 23,
+                           # Parameters to induce seasonal forcing in transmission
+                           b0 = -30, b1 = 0.85, period = 3*52,
+                           # parameters for survival curve with varying vaccination levels
+                           beta_0 = -3, beta_1 = 10, vax = vacc.pcts,
+                           # parameters for host population dynamics include births and deaths
+                           N1 = 20000, K = 50000, rho_pop = 0.36, sigmaa = 0.92^(1/52),
+                           output_df = TRUE, stochastic = TRUE) %>% mutate(sim = paste0("sim", i))
+  vax_season_med_surv_stoch <- bind_rows(vax_season_med_surv_stoch, my_stoch_sim)
+  
+}
+
+
+vax_season_high_surv_stoch <- NULL
+for(i in 1:n_stoch_sims){
+  my_stoch_sim <- smile_fx(theta = my_theta, tau = my_tau, years = 23,
+                           # Parameters to induce seasonal forcing in transmission
+                           b0 = -30, b1 = 0.85, period = 3*52,
+                           # parameters for survival curve with varying vaccination levels
+                           beta_0 = 1.5, beta_1 = 10, vax = vacc.pcts,
+                           # parameters for host population dynamics include births and deaths
+                           N1 = 20000, K = 50000, rho_pop = 0.36, sigmaa = 0.92^(1/52),
+                           output_df = TRUE, stochastic = TRUE) %>% mutate(sim = paste0("sim", i))
+  vax_season_high_surv_stoch <- bind_rows(vax_season_high_surv_stoch, my_stoch_sim)
+  
+}
+
+
+bind_rows(vax_noseason_low_surv_stoch %>% mutate(seasonality = "no", survival = "low"),
+          vax_noseason_med_surv_stoch %>% mutate(seasonality = "no", survival = "med"),
+          vax_noseason_high_surv_stoch %>% mutate(seasonality = "no", survival = "high"),
+          vax_season_low_surv_stoch %>%  mutate(seasonality = "yes", survival = "low"),
+          vax_season_med_surv_stoch %>% mutate(seasonality = "yes", survival = "med"),
+          vax_season_high_surv_stoch %>% mutate(seasonality = "yes", survival = "high")) -> big_stoch_df
+```
+
+
+```{r}
+big_stoch_df %>% 
+  mutate(survival = factor(survival, levels = c("low", "med", "high"))) %>% 
+  # filter(compartment %in% c("S", "L")) %>%
+  filter(seasonality == "no") %>% 
+  select(week, S, L, survival, sim) %>% 
+  pivot_longer(-c(week, survival, sim)) %>% 
+  ggplot(aes(x = week, y = value, color = survival, group = sim)) +
+  facet_wrap(~name, scales = "free") +
+  geom_path(linewidth = 0.8, alpha = 0.8) +
+  theme_bw() +
+  # scale_color_manual(values = c("#E95562FF", "#120D32FF")) +
+  # scale_linetype_manual(values = c("dashed", "solid")) +
+  labs(y = "Number of individuals", title = "No seasonal forcing") +
+  scale_color_manual(values = surv_3_cols)
+
+ggsave("research_day_figs/vax_noseason_SL.png")
+
+big_df %>% 
+  mutate(survival = factor(survival, levels = c("low", "med", "high"))) %>% 
+  filter(seasonality == "yes") %>% 
+  filter(compartment %in% c("S", "L")) %>% 
+  ggplot(aes(x = week, y = n, color = survival)) +
+  facet_wrap(~compartment, scales = "free") +
+  geom_line(linewidth = 0.8, alpha = 0.8) +
+  theme_bw() +
+  # scale_color_manual(values = c("#E95562FF", "#120D32FF")) +
+  # scale_linetype_manual(values = c("dashed", "solid")) +
+  labs(y = "Number of individuals", title = "With seasonal forcing") +
+  scale_color_manual(values = surv_3_cols)
+
+ggsave("research_day_figs/vax_season_SL.png")
+```
+
+```{r fig.width=10, fig.height=5}
+big_stoch_df %>% 
+  mutate(survival = factor(survival, levels = c("low", "med", "high"))) %>%
+  filter(seasonality == "yes") %>%
+  ggplot(aes(x = week, y = L, group = sim, color = survival)) +
+  facet_wrap(~survival, scales = "free", ncol = 3) +
+  geom_path() +
+  theme_bw() +
+  scale_color_manual(values = surv_3_cols) +
+  labs(title = "Seasonal Forcing", y = "Number of LIZ") +
+  theme(legend.position = "none") -> season_LIZ_stoch_plots
+
+big_stoch_df %>% 
+  mutate(survival = factor(survival, levels = c("low", "med", "high"))) %>%
+  filter(seasonality == "no") %>%
+  ggplot(aes(x = week, y = L, group = sim, color = survival)) +
+  facet_wrap(~survival, scales = "free", ncol = 3) +
+  geom_path() +
+  theme_bw() +
+  scale_color_manual(values = surv_3_cols) +
+  labs(title = "No Seasonality", y = "Number of LIZ") +
+  theme(legend.position = "none") -> noseason_LIZ_stoch_plots
+
+plot_grid(season_LIZ_stoch_plots, noseason_LIZ_stoch_plots, nrow = 2)
+
+ggsave("research_day_figs/stoch_liz_facets.png")
+```
+
+```{r fig.width=10, fig.height=5}
+big_stoch_df %>% 
+  mutate(survival = factor(survival, levels = c("low", "med", "high"))) %>%
+  filter(seasonality == "yes") %>%
+  ggplot(aes(x = week, y = S, group = sim, color = survival)) +
+  facet_wrap(~survival, scales = "free", ncol = 3) +
+  geom_path() +
+  theme_bw() +
+  scale_color_manual(values = surv_3_cols) +
+  labs(title = "Seasonal Forcing") +
+  theme(legend.position = "none") -> season_LIZ_stoch_plots
+
+big_stoch_df %>% 
+  mutate(survival = factor(survival, levels = c("low", "med", "high"))) %>%
+  filter(seasonality == "no") %>%
+  ggplot(aes(x = week, y = S, group = sim, color = survival)) +
+  facet_wrap(~survival, scales = "free", ncol = 3) +
+  geom_path() +
+  theme_bw() +
+  scale_color_manual(values = surv_3_cols) +
+  labs(title = "No Seasonality") +
+  theme(legend.position = "none") -> noseason_LIZ_stoch_plots
+
+plot_grid(season_LIZ_stoch_plots, noseason_LIZ_stoch_plots, nrow = 2)
+
+ggsave("research_day_figs/stoch_S_facets.png")
+```
+
+```{r fig.width=10, fig.height=5}
+big_stoch_df %>% 
+  mutate(survival = factor(survival, levels = c("low", "med", "high"))) %>%
+  filter(seasonality == "yes") %>%
+  ggplot(aes(x = week, y = M, group = sim, color = survival)) +
+  facet_wrap(~survival, scales = "free", ncol = 3) +
+  geom_path() +
+  theme_bw() +
+  scale_color_manual(values = surv_3_cols) +
+  labs(title = "Seasonal Forcing") +
+  theme(legend.position = "none") -> season_LIZ_stoch_plots
+
+big_stoch_df %>% 
+  mutate(survival = factor(survival, levels = c("low", "med", "high"))) %>%
+  filter(seasonality == "no") %>%
+  ggplot(aes(x = week, y = M, group = sim, color = survival)) +
+  facet_wrap(~survival, scales = "free", ncol = 3) +
+  geom_path() +
+  theme_bw() +
+  scale_color_manual(values = surv_3_cols) +
+  labs(title = "No Seasonality") +
+  theme(legend.position = "none") -> noseason_LIZ_stoch_plots
+
+plot_grid(season_LIZ_stoch_plots, noseason_LIZ_stoch_plots, nrow = 2)
+
+ggsave("research_day_figs/stoch_M_facets.png")
+```
+
+```{r fig.width=10, fig.height=5}
+big_stoch_df %>% 
+  mutate(survival = factor(survival, levels = c("low", "med", "high"))) %>%
+  filter(seasonality == "yes") %>%
+  ggplot(aes(x = week, y = I, group = sim, color = survival)) +
+  facet_wrap(~survival, scales = "free", ncol = 3) +
+  geom_path() +
+  theme_bw() +
+  scale_color_manual(values = surv_3_cols) +
+  labs(title = "Seasonal Forcing") +
+  theme(legend.position = "none") -> season_LIZ_stoch_plots
+
+big_stoch_df %>% 
+  mutate(survival = factor(survival, levels = c("low", "med", "high"))) %>%
+  filter(seasonality == "no") %>%
+  ggplot(aes(x = week, y = I, group = sim, color = survival)) +
+  facet_wrap(~survival, scales = "free", ncol = 3) +
+  geom_path() +
+  theme_bw() +
+  scale_color_manual(values = surv_3_cols) +
+  labs(title = "No Seasonality") +
+  theme(legend.position = "none") -> noseason_LIZ_stoch_plots
+
+plot_grid(season_LIZ_stoch_plots, noseason_LIZ_stoch_plots, nrow = 2)
+
+ggsave("research_day_figs/stoch_I_facets.png")
+```
+
+```{r fig.width=10, fig.height=5}
+big_stoch_df %>% 
+  mutate(survival = factor(survival, levels = c("low", "med", "high"))) %>%
+  filter(seasonality == "yes") %>%
+  ggplot(aes(x = week, y = E, group = sim, color = survival)) +
+  facet_wrap(~survival, scales = "free", ncol = 3) +
+  geom_path() +
+  theme_bw() +
+  scale_color_manual(values = surv_3_cols) +
+  labs(title = "Seasonal Forcing") +
+  theme(legend.position = "none") -> season_LIZ_stoch_plots
+
+big_stoch_df %>% 
+  mutate(survival = factor(survival, levels = c("low", "med", "high"))) %>%
+  filter(seasonality == "no") %>%
+  ggplot(aes(x = week, y = E, group = sim, color = survival)) +
+  facet_wrap(~survival, scales = "free", ncol = 3) +
+  geom_path() +
+  theme_bw() +
+  scale_color_manual(values = surv_3_cols) +
+  labs(title = "No Seasonality") +
+  theme(legend.position = "none") -> noseason_LIZ_stoch_plots
+
+plot_grid(season_LIZ_stoch_plots, noseason_LIZ_stoch_plots, nrow = 2)
+
+ggsave("research_day_figs/stoch_E_facets.png")
+```
 
 # ARCHIVED 
 
