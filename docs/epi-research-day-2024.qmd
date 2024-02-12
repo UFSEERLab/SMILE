@@ -33,7 +33,7 @@ build_SMILE_plots <- function(smile_output_as_df) {
 ```
 
 
-```{r echo=FALSE, warning=FALSE, message=FALSE}
+```{r echo=FALSE, warning=FALSE, message=FALSE, eval=FALSE}
 vietnam_data <- readxl::read_excel("../datafiles/vietnam_data.xlsx") %>% 
   janitor::clean_names() %>% 
   rownames_to_column(var = "n_year") %>% mutate(n_year = as.numeric(n_year))
@@ -601,8 +601,10 @@ dev.off()
 surv_palette <- viridisLite::viridis(12, option = "A")
 surv_3_cols <- surv_palette[c(2,6,9)]
 # scales::show_col(surv_3_cols)
+vax_rates = rep(vacc.pcts, each=52)
 
 # png("research_day_figs/3survival_curves_w_vax.png", width = 13 , height = 8, units = "in", res = 300, type = "windows")
+
 
 data.frame(n_weeks = 1:(23*52), vax_rates = rep(vacc.pcts, each=52), betas_0 = rep(sim_betas_0, each = length(vax_rates)), betas_1 = my_beta_1) %>% 
   mutate(zeta = (1 / (1 + exp(-(betas_0 + betas_1 * vax_rates))))) %>% 
@@ -650,7 +652,7 @@ vax_noseason_high_surv <- smile_fx(theta = 10, tau = 10, years = 23,
                             N1 = 20000, K = 50000, rho_pop = 0.36, sigmaa = 0.92^(1/52),
                             output_df = TRUE)
 
-vax_season_low_survival <- smile_fx(theta = 10, tau = 10, years = 23,
+vax_season_low_surv <- smile_fx(theta = 10, tau = 10, years = 23,
                             # Parameters to induce seasonal forcing in transmission
                             b0 = -30, b1 = 0.85, period = 3*52,
                             # parameters for survival curve with varying vaccination levels
@@ -659,7 +661,7 @@ vax_season_low_survival <- smile_fx(theta = 10, tau = 10, years = 23,
                             N1 = 20000, K = 50000, rho_pop = 0.36, sigmaa = 0.92^(1/52),
                             output_df = TRUE)
 
-vax_season_med_survival <- smile_fx(theta = 10, tau = 10, years = 23,
+vax_season_med_surv <- smile_fx(theta = 10, tau = 10, years = 23,
                             # Parameters to induce seasonal forcing in transmission
                             b0 = -30, b1 = 0.85, period = 3*52,
                             # parameters for survival curve with varying vaccination levels
@@ -668,7 +670,7 @@ vax_season_med_survival <- smile_fx(theta = 10, tau = 10, years = 23,
                             N1 = 20000, K = 50000, rho_pop = 0.36, sigmaa = 0.92^(1/52),
                             output_df = TRUE)
 
-vax_season_high_survival <- smile_fx(theta = 10, tau = 10, years = 23,
+vax_season_high_surv <- smile_fx(theta = 10, tau = 10, years = 23,
                             # Parameters to induce seasonal forcing in transmission
                             b0 = -30, b1 = 0.85, period = 3*52,
                             # parameters for survival curve with varying vaccination levels
@@ -685,10 +687,45 @@ make_smile_long <- function(smile_df) {
   mutate(compartment = factor(compartment, levels = c("S", "M", "I", "L", "E", "Z")))
 }
 
-bind_rows(vax_noseason_low_survival %>% make_smile_long() %>% mutate(seasonality = "no", survival = "low"),
-          vax_noseason_med_survival %>% make_smile_long() %>% mutate(seasonality = "no", survival = "med"))
+bind_rows(vax_noseason_low_surv %>% make_smile_long() %>% mutate(seasonality = "no", survival = "low"),
+          vax_noseason_med_surv %>% make_smile_long() %>% mutate(seasonality = "no", survival = "med"),
+          vax_noseason_high_surv %>% make_smile_long() %>% mutate(seasonality = "no", survival = "high"),
+          vax_season_low_surv %>% make_smile_long() %>% mutate(seasonality = "yes", survival = "low"),
+          vax_season_med_surv %>% make_smile_long() %>% mutate(seasonality = "yes", survival = "med"),
+          vax_season_high_surv %>% make_smile_long() %>% mutate(seasonality = "yes", survival = "high")) -> big_df
 
 
+```
+
+
+```{r}
+big_df %>% 
+  mutate(survival = factor(survival, levels = c("low", "med", "high"))) %>% 
+  filter(seasonality == "no") %>% 
+  ggplot(aes(x = week, y = n, color = survival)) +
+  facet_wrap(~compartment, scales = "free") +
+  geom_line(linewidth = 0.8, alpha = 0.8) +
+  theme_bw() +
+  # scale_color_manual(values = c("#E95562FF", "#120D32FF")) +
+  # scale_linetype_manual(values = c("dashed", "solid")) +
+  labs(y = "Number of individuals", title = "No seasonal forcing") +
+  scale_color_manual(values = surv_3_cols)
+
+ggsave("research_day_figs/vax_noseason_SMILE.png")
+
+big_df %>% 
+  mutate(survival = factor(survival, levels = c("low", "med", "high"))) %>% 
+  filter(seasonality == "yes") %>% 
+  ggplot(aes(x = week, y = n, color = survival)) +
+  facet_wrap(~compartment, scales = "free") +
+  geom_line(linewidth = 0.8, alpha = 0.8) +
+  theme_bw() +
+  # scale_color_manual(values = c("#E95562FF", "#120D32FF")) +
+  # scale_linetype_manual(values = c("dashed", "solid")) +
+  labs(y = "Number of individuals", title = "With seasonal forcing") +
+  scale_color_manual(values = surv_3_cols)
+
+ggsave("research_day_figs/vax_season_SMILE.png")
 ```
 
 
