@@ -663,9 +663,15 @@ build_SL_plot <- function(smile_output) {
 ```
 
 ```{r}
+
+nweeks <- 23*52
+my_b_season <- b.season(b0 = -30, b1 = 0.85, period = 3*52,t= 0:nweeks)
+my_b_fixed <- 0.001
+
+
 vax_noseason_low_surv <- smile_fx(theta = my_theta, tau = my_tau, years = 23,
                             # fixed b for no seasonality
-                            b_fixed = 0.001,
+                            b_fixed = my_b_fixed,
                             # parameters for survival curve with varying vaccination levels
                             beta_0 = -10, beta_1 = 10, vax = vacc.pcts,
                             # parameters for host population dynamics include births and deaths
@@ -676,7 +682,7 @@ vax_noseason_low_surv %>% build_SL_plot()
 
 vax_noseason_med_surv <- smile_fx(theta = my_theta, tau = my_tau, years = 23,
                             # fixed b for no seasonality
-                            b_fixed = 0.001,
+                            b_fixed = my_b_fixed,
                             # parameters for survival curve with varying vaccination levels
                             beta_0 = -3, beta_1 = 10, vax = vacc.pcts,
                             # parameters for host population dynamics include births and deaths
@@ -686,7 +692,7 @@ vax_noseason_med_surv %>% build_SMILE_plots()
 
 vax_noseason_high_surv <- smile_fx(theta = my_theta, tau = my_tau, years = 23,
                             # fixed b for no seasonality
-                            b_fixed = 0.001,
+                            b_fixed = my_b_fixed,
                             # parameters for survival curve with varying vaccination levels
                             beta_0 = 1.5, beta_1 = 10, vax = vacc.pcts,
                             # parameters for host population dynamics include births and deaths
@@ -740,12 +746,34 @@ bind_rows(vax_noseason_low_surv %>% make_smile_long() %>% mutate(seasonality = "
           vax_season_high_surv %>% make_smile_long() %>% mutate(seasonality = "yes", survival = "high")) -> big_df
 
 
+vax_season_med_surv %>% 
+  mutate(seasonality = "no", survival = "low") %>% 
+  select(week, seasonality, survival, E) %>% 
+  mutate(R0 = calc_local_R0(tau = my_tau, theta = my_theta, b = my_b_season, E = E))
+
+
+
+bind_rows(vax_noseason_low_surv %>% mutate(seasonality = "no", survival = "low") %>%
+            mutate(R0 = calc_local_R0(tau = my_tau, theta = my_theta, b = my_b_fixed, E = E)),
+          vax_noseason_med_surv %>% mutate(seasonality = "no", survival = "med") %>% 
+            mutate(R0 = calc_local_R0(tau = my_tau, theta = my_theta, b = my_b_fixed, E = E)),
+          vax_noseason_high_surv %>% mutate(seasonality = "no", survival = "high") %>% 
+            mutate(R0 = calc_local_R0(tau = my_tau, theta = my_theta, b = my_b_fixed, E = E)),
+          vax_season_low_surv %>% mutate(seasonality = "yes", survival = "low") %>% 
+            mutate(R0 = calc_local_R0(tau = my_tau, theta = my_theta, b = my_b_season, E = E)),
+          vax_season_med_surv %>% mutate(seasonality = "yes", survival = "med") %>% 
+            mutate(R0 = calc_local_R0(tau = my_tau, theta = my_theta, b = my_b_season, E = E)),
+          vax_season_high_surv %>% mutate(seasonality = "yes", survival = "high") %>% 
+            mutate(R0 = calc_local_R0(tau = my_tau, theta = my_theta, b = my_b_season, E = E))) -> big_df_R0
+
+
 ```
 
 
 ```{r}
 big_df %>% 
   mutate(survival = factor(survival, levels = c("low", "med", "high"))) %>% 
+  filter(compartment %in% c("S", "L")) %>% 
   filter(seasonality == "no") %>% 
   ggplot(aes(x = week, y = n, color = survival)) +
   facet_wrap(~compartment, scales = "free") +
@@ -756,11 +784,12 @@ big_df %>%
   labs(y = "Number of individuals", title = "No seasonal forcing") +
   scale_color_manual(values = surv_3_cols)
 
-ggsave("research_day_figs/vax_noseason_SMILE.png")
+ggsave("research_day_figs/vax_noseason_SL.png")
 
 big_df %>% 
   mutate(survival = factor(survival, levels = c("low", "med", "high"))) %>% 
   filter(seasonality == "yes") %>% 
+  filter(compartment %in% c("S", "L")) %>% 
   ggplot(aes(x = week, y = n, color = survival)) +
   facet_wrap(~compartment, scales = "free") +
   geom_line(linewidth = 0.8, alpha = 0.8) +
@@ -770,9 +799,40 @@ big_df %>%
   labs(y = "Number of individuals", title = "With seasonal forcing") +
   scale_color_manual(values = surv_3_cols)
 
-ggsave("research_day_figs/vax_season_SMILE.png")
+ggsave("research_day_figs/vax_season_SL.png")
 ```
 
+```{r}
+big_df_R0 %>% 
+  filter(seasonality == "no") %>% 
+  # pivot_wider(names_from = compartment, values_from = n) %>% 
+  # mutate(survival = factor(survival, levels = c("low", "med", "high"))) %>% 
+  # select(week, seasonality, survival, E) %>% 
+  # mutate(R0 = calc_local_R0(tau = my_tau, theta = my_theta, b = my_b_fixed, E = E)) %>% 
+  ggplot(aes(x = week, y = R0, color = survival)) +
+  # geom_point() +
+  geom_line(linewidth = 1) +
+  theme_bw() +
+  labs(title = "Local R0 - no seasonality") +
+  scale_color_manual(values = surv_3_cols)
+
+ggsave("research_day_figs/vax_noseason_R0.png")
+
+big_df_R0 %>% 
+  filter(seasonality == "yes") %>% 
+  # pivot_wider(names_from = compartment, values_from = n) %>% 
+  # mutate(survival = factor(survival, levels = c("low", "med", "high"))) %>% 
+  # select(week, seasonality, survival, E) %>% 
+  # mutate(R0 = calc_local_R0(tau = my_tau, theta = my_theta, b = my_b_fixed, E = E)) %>% 
+  ggplot(aes(x = week, y = R0, color = survival)) +
+  # geom_point() +
+  geom_line(linewidth = 1) +
+  theme_bw() +
+  labs(title = "Local R0 - seasonal forcing") +
+  scale_color_manual(values = surv_3_cols)
+
+ggsave("research_day_figs/vax_season_R0.png")
+```
 
 
 ```{r}
@@ -786,6 +846,24 @@ big_df %>%
   scale_color_manual(values = c("red", "black")) +
   scale_linetype_manual(values = c("dashed", "solid"))
 ```
+
+# LOCAL R0
+
+```{r}
+
+
+my_E <- vax_smile_tests$E
+
+local_R0 <- calc_local_R0(tau = 10, theta = 10, b = my_b, E = my_E)
+
+data.frame(weeks = 0:nweeks, R0 = local_R0) %>% 
+  ggplot(aes(x = weeks, y = R0)) +
+  # geom_point() +
+  geom_line() +
+  theme_bw() +
+  labs(title = "Local R0") -> local_R0_plot
+```
+
 
 # ARCHIVED 
 
