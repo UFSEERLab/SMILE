@@ -19,12 +19,12 @@ source(file = "../smile_main.R")
 
 ```{r echo=FALSE}
 
-build_SMILE_plots <- function(smile_output_as_df) {
+build_SMILE_plots <- function(smile_output_as_df, facet_rows = 2) {
   smile_output_as_df %>% 
     pivot_longer(-week, names_to = "compartment", values_to = "n") %>% 
     mutate(compartment = factor(compartment, levels = c("S", "M", "I", "L", "E", "Z"))) %>% 
     ggplot(aes(x = week, y = n)) +
-    facet_wrap(~compartment, scales = "free") +
+    facet_wrap(~compartment, scales = "free", nrow = facet_rows) +
     geom_path() +
     theme_bw()
   
@@ -466,7 +466,6 @@ my_b_season <- b.season(b0 = -30, b1 = 0.85, period = 3*52,t= 0:nweeks)
 
 
 ```{r fig.width=12, fig.height=4}
-#| echo: false
 
 vax_noseason_low_surv <- smile_fx(theta = my_theta, tau = my_tau, years = 23,
                             # fixed b for no seasonality
@@ -495,7 +494,6 @@ plot_grid(vax_season_low_surv %>% build_SMILE_plots() + labs(title = "season-low
 
 ```{r}
 
-#| echo: false
 vax_noseason_med_surv <- smile_fx(theta = my_theta, tau = my_tau, years = 23,
                             # fixed b for no seasonality
                             b_fixed = my_b_fixed,
@@ -522,7 +520,7 @@ plot_grid(vax_season_med_surv %>% build_SMILE_plots() + labs(title = "season_med
 ## HIGH SURVIVAL
 
 ```{r}
-#| echo: false
+
 vax_noseason_high_surv <- smile_fx(theta = my_theta, tau = my_tau, years = 23,
                             # fixed b for no seasonality
                             b_fixed = my_b_fixed,
@@ -704,6 +702,7 @@ ggsave("research_day_figs/vax_season_SL.png")
 
 ```{r fig.width=10, fig.height=4}
 #| echo: false
+#| eval: false
 big_df_R0 %>% 
   filter(seasonality == "no") %>% 
   # pivot_wider(names_from = compartment, values_from = n) %>% 
@@ -781,6 +780,69 @@ data.frame(week = 0:nweeks, b = my_b_season) %>%
   theme_bw() +
   labs(y = "b - probability of transmission")
 ```
+
+# Tests ----------------------------
+
+
+```{r fig.width=12, fig.height=4}
+# simplest scenario, no host dynamics
+sim1 <- smile_fx(tau = 10, theta = 100, b_fixed = 0.001, years = 20, age_struc = FALSE, N1 = 20000, zeta_novax = 0.5, output_df = TRUE)
+sim1 %>% build_SMILE_plots(., 1)
+```
+We start with a 20,000 susceptible population, but since there are no host dynamics, no reproduction, then the population just continues to decrease as a result of the outbreak. In this case, we have incorporated a high survival probability of 88%, the lower the survival probability, the faster this decline in population size.
+
+```{r fig.width=12, fig.height=4}
+surv_prob_seq <- seq(0.85, 1, by = 0.01)
+
+my_smile_df <- NULL
+for(i in 1:length(surv_prob_seq)) {
+  
+  i_survival <- surv_prob_seq[i]
+  sim <- smile_fx(tau = 10, theta = 100, b_fixed = 0.001, years = 20, age_struc = FALSE, N1 = 20000, zeta_novax = i_survival, output_df = TRUE) %>% 
+    mutate(survival = i_survival)
+  
+  my_smile_df <- bind_rows(my_smile_df, sim)
+}
+
+
+ my_smile_df %>% 
+    pivot_longer(-c(week, survival), names_to = "compartment", values_to = "n") %>% 
+    mutate(compartment = factor(compartment, levels = c("S", "M", "I", "L", "E", "Z"))) %>% 
+    ggplot(aes(x = week, y = n, color = survival, group = survival)) +
+    facet_wrap(~compartment, scales = "free", nrow = 1) +
+    geom_line(linewidth = 1, alpha = 0.5) +
+    theme_bw() +
+   scale_color_viridis_c()
+```
+
+Now we consider with population dynamics
+
+```{r fig.width=12, fig.height=4}
+surv_prob_seq <- seq(0.85, 1, by = 0.01)
+
+my_smile_df <- NULL
+for(i in 1:length(surv_prob_seq)) {
+  
+  i_survival <- surv_prob_seq[i]
+  sim <- smile_fx(tau = 10, theta = 100, b_fixed = 0.001, years = 20, age_struc = TRUE, N1 = 20000, K =15000, rho_pop = 0.36,
+                  zeta_novax = i_survival, output_df = TRUE) %>% 
+    mutate(survival = i_survival)
+  
+  my_smile_df <- bind_rows(my_smile_df, sim)
+}
+
+
+ my_smile_df %>% 
+    pivot_longer(-c(week, survival), names_to = "compartment", values_to = "n") %>% 
+    mutate(compartment = factor(compartment, levels = c("S", "M", "I", "L", "E", "Z"))) %>% 
+    ggplot(aes(x = week, y = n, color = survival, group = survival)) +
+    facet_wrap(~compartment, scales = "free", nrow = 1) +
+    geom_line(linewidth = 1, alpha = 0.5) +
+    theme_bw() +
+   scale_color_viridis_c()
+```
+
+In this case, we see that we have oscillations due to the yearly birth pulses, and essentially the susceptible pool comes from those new individuals joining the population. Because we have a relatively high survival probability, the immune compartment hovers over the carrying capacity, in this case, 15000. 
 
 # ARCHIVED
 
