@@ -5,3 +5,6 @@
 *.RData
 *.html
 *.pptx
+/data
+*.png
+*.db
