@@ -34,7 +34,7 @@ build_SMILE_plots <- function(smile_output_as_df, facet_rows = 2) {
 
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
-vietnam_data <- readxl::read_excel("../datafiles/vietnam_data.xlsx") %>% 
+vietnam_data <- readxl::read_excel("../data/vietnam_data.xlsx") %>% 
   janitor::clean_names() %>% 
   rownames_to_column(var = "n_year") %>% mutate(n_year = as.numeric(n_year))
 
