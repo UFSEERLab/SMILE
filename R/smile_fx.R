@@ -1,7 +1,7 @@
 
 #' SMILE function
 #'
-#' This function encompasses the original functions and outputs a time series for each of the compartments
+#' This function encompasses the original functions and assumptions. It outputs a time series for each of the compartments given a set of parameters.
 #'
 #' @param b0
 #' @param b1
