@@ -4,7 +4,7 @@ library(diagram)
 ## Conceptual diagram of the SMILE model
 # png("~/Dropbox/JuanPabloThesis/PostDoc/SMILE/Figures/Figure1.png",family="Times"
 # 			,width=8,height=8,units="in",res=300,type="cairo")
-png("docs/")
+# png("docs/")
 par(mar=c(0,0,0,0),oma=c(0.5,0.5,0.5,0.5))
 
 plot(0,0,xlim=c(0,9.5),ylim=c(0,5.5),axes=FALSE,type="n")
@@ -122,7 +122,7 @@ legend("top",legend=c("Deaths","Suceptibles"),lty=c(1,2),col=c("black","red"),bt
 # 			,width=7,height=7,units="in",type="cairo",res=300)
 #tiff("~/Dropbox/JuanPabloThesis/PostDoc/SMILE/Figures/SMILE_rel_bias.tiff",width=9,height=9,units="in",res=300
 #	,compression="lzw",type="cairo",family="times")
-	
+
 fig.lab	<-	c("A)","B)","C)","D)")
 #c(expression(tau),expression(theta),expression(b[0]),expression(b[1]))
 
@@ -145,9 +145,9 @@ plot(0,0,type="n",bty="l",xaxt="n",xlim=c(0,53),ylim=c(0,max(montana.stoch))
 	,xlab="Time (Weeks)",ylab="Number of Deaths",cex.lab=1.5)
 
 for(i in 1:100){
-	
+
 	points(montana.stoch[i,],type="l",col="grey")
-	
+
 }
 axis(1,at=seq(0,52,by=13))
 points(montana.ts,type="l",lwd=2)
@@ -215,13 +215,13 @@ legend("center",legend=c(expression(R[0]<1),expression(R[0]>1)),fill=c("black","
 mtext(expression(tau),1,cex=1.5,outer=TRUE)
 mtext(expression(theta),2,cex=1.5,outer=TRUE)
 # dev.off()
-# 
+#
 # # Figure S2
 # png("~/Dropbox/JuanPabloThesis/PostDoc/SMILE/Figures/FigureS2.png",family="Times"
 # 			,width=7,height=7,units="in",res=300,type="cairo")
-	
+
 #fig.lab	<-	c(expression(tau),expression(theta),expression(b[0]),expression(b[1]))
-fig.lab	<-	c("A)","B)","C)","D)")	
+fig.lab	<-	c("A)","B)","C)","D)")
 par(mfrow=c(2,2),mar=c(3,3,1,1),mgp=c(1.75,0.5,0),tcl=-0.2,oma=c(2,2,1,1),cex.axis=1.25)
 for(i in 1:4){
 	y.lim	<-	range(boxplot(rel.bias1[,i,],plot=FALSE)$stats)
@@ -233,13 +233,13 @@ for(i in 1:4){
 mtext("Relative Bias",side=2,outer=TRUE,cex=1.5)
 mtext("Type of Information",side=1,outer=TRUE,cex=1.5)
 # dev.off()
-# 
-# 
+#
+#
 # # Figure S3
 # png("~/Dropbox/JuanPabloThesis/PostDoc/SMILE/Figures/FigureS3.png",family="Times"
 # 			,width=7,height=7,units="in",res=300,type="cairo")
 
-fig.lab	<-	c("A)","B)","C)","D)")	
+fig.lab	<-	c("A)","B)","C)","D)")
 #fig.lab	<-	c(expression(tau),expression(theta),expression(b[0]),expression(b[1]))
 
 par(mfrow=c(2,2),mar=c(3,3,1,1),mgp=c(1.75,0.5,0),tcl=-0.2,oma=c(2.5,2,1,1),cex.axis=1.25)
