@@ -789,7 +789,7 @@ for(i in 1:length(surv_prob_seq)) {
 
 Now we consider with population dynamics, where there is a yearly birth pulse, and we have death by other causes aside from just disease. Since we still have a relatively high survival probability, you will see that outbreaks occur yearly, following the birth pulses. Over time, the population tries to settle close to carrying capacity with yearly outbreaks.
 
-```{r fig.width=13, fig.height=4, echo=FALSE}
+```{r fig.width=13, fig.height=4}
 surv_prob_seq <- seq(0.85, 0.98, by = 0.01)
 
 my_smile_df <- NULL
