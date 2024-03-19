@@ -4,7 +4,4 @@
 .Ruserdata
 *.RData
 *.pptx
-/data
-*.png
 *.db
-docs
