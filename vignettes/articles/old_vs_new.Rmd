@@ -16,7 +16,12 @@ library(SMILE)
 Testing if the new function can recreate all the previous scenarios and new ones. Having a main function will help with the iteration and testing of the vaccine scenarios.
 
 ```{r message=FALSE, warning=FALSE}
-library(tidyverse)
+library(ggplot2)
+library(dplyr)
+library(purrr)
+library(tibble)
+library(tidyr)
+library(stringr)
 library(cowplot)
 ```
 
