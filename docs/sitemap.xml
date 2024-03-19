@@ -1,42 +1,42 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>/404.html</loc>
+    <loc>https://ufseerlab.github.io/SMILE/404.html</loc>
   </url>
   <url>
-    <loc>/articles/index.html</loc>
+    <loc>https://ufseerlab.github.io/SMILE/articles/index.html</loc>
   </url>
   <url>
-    <loc>/articles/old_vs_new.html</loc>
+    <loc>https://ufseerlab.github.io/SMILE/articles/old_vs_new.html</loc>
   </url>
   <url>
-    <loc>/authors.html</loc>
+    <loc>https://ufseerlab.github.io/SMILE/authors.html</loc>
   </url>
   <url>
-    <loc>/index.html</loc>
+    <loc>https://ufseerlab.github.io/SMILE/index.html</loc>
   </url>
   <url>
-    <loc>/reference/b_season.html</loc>
+    <loc>https://ufseerlab.github.io/SMILE/reference/b_season.html</loc>
   </url>
   <url>
-    <loc>/reference/calc_local_R0.html</loc>
+    <loc>https://ufseerlab.github.io/SMILE/reference/calc_local_R0.html</loc>
   </url>
   <url>
-    <loc>/reference/index.html</loc>
+    <loc>https://ufseerlab.github.io/SMILE/reference/index.html</loc>
   </url>
   <url>
-    <loc>/reference/lambda_t.html</loc>
+    <loc>https://ufseerlab.github.io/SMILE/reference/lambda_t.html</loc>
   </url>
   <url>
-    <loc>/reference/LIZ_negll.html</loc>
+    <loc>https://ufseerlab.github.io/SMILE/reference/LIZ_negll.html</loc>
   </url>
   <url>
-    <loc>/reference/rho_n.html</loc>
+    <loc>https://ufseerlab.github.io/SMILE/reference/rho_n.html</loc>
   </url>
   <url>
-    <loc>/reference/smile_fx.html</loc>
+    <loc>https://ufseerlab.github.io/SMILE/reference/smile_fx.html</loc>
   </url>
   <url>
-    <loc>/reference/SMILE_param_estim.html</loc>
+    <loc>https://ufseerlab.github.io/SMILE/reference/SMILE_param_estim.html</loc>
   </url>
 </urlset>
