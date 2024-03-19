@@ -3,33 +3,35 @@
 #'
 #' This function encompasses the original functions and assumptions. It outputs a time series for each of the compartments given a set of parameters.
 #'
-#' @param b0
-#' @param b1
-#' @param period
-#' @param theta
-#' @param tau
-#' @param years
-#' @param alpha
-#' @param zeta_novax
-#' @param gamma
-#' @param sigmaa
-#' @param psi
-#' @param N1
-#' @param K
-#' @param vax
-#' @param beta_0
-#' @param beta_1
-#' @param b_fixed
-#' @param age_struc
-#' @param stochastic
-#' @param LIZ_init
-#' @param rho_pop
-#' @param output_df
+#' @param b0 strength of seasonality parameter
+#' @param b1 strength of seasonality parameter
+#' @param period periodicity of the infection in weeks
+#' @param theta dispersion effort parameter
+#' @param tau dispersion effort parameter
+#' @param years number of years to run the simulation
+#' @param alpha probability of transitioning from immune to susceptible in one week timestep
+#' @param zeta_novax probability of becoming immune after infection (fixed when no vaccination)
+#' @param gamma spore persistence rate
+#' @param sigmaa rate of death by other causes than disease
+#' @param psi number of spores per carcass
+#' @param N1 starting population size
+#' @param K carrying capacity for population dynamics
+#' @param vax vaccination rates for each year
+#' @param beta_0 survival parameter
+#' @param beta_1 vaccine survival parameter
+#' @param b_fixed Number of infections caused by one LIZ when dispersion effort is zero and assume no seasonality
+#' @param age_struc default is TRUE, if set to false, no population dynamics are considered
+#' @param stochastic default is FALSE, so the simulations are deterministic
+#' @param LIZ_init Initial number of carcasses, set to default 1
+#' @param rho_pop average reproduction rate to be used when simulating with population dynamics
+#' @param output_df if set to TRUE, will return a dataframe instead of a list
 #'
-#' @return
+#' @returns description
 #' @export
 #'
 #' @examples
+#' SMILE::smile_fx(-30, 0.85, 3*52, 10, 10, 10)
+
 smile_fx <- function(b0,b1,period,theta,tau,years,
                      # fixed parameters
                      # Fixed parameters
@@ -80,12 +82,12 @@ smile_fx <- function(b0,b1,period,theta,tau,years,
     # b	<-	b.season(b0,b1,period,t)
 
     if(is.null(b_fixed) == TRUE) {
-      b <- b.season(b0,b1,period,t)
+      b <- b_season(b0,b1,period,t)
     } else {
       b <- b_fixed
     }
 
-    lambda[tm1]	<-	lambda.t(theta=theta,tau=tau,b=b,E=E[tm1])
+    lambda[tm1]	<-	lambda_t(theta=theta,tau=tau,b=b,E=E[tm1])
 
     if(is.null(rho_pop) == TRUE) {
       rho_pop = 0.41

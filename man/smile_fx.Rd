@@ -30,8 +30,56 @@ smile_fx(
 )
 }
 \arguments{
-\item{output_df}{}
+\item{b0}{strength of seasonality parameter}
+
+\item{b1}{strength of seasonality parameter}
+
+\item{period}{periodicity of the infection in weeks}
+
+\item{theta}{dispersion effort parameter}
+
+\item{tau}{dispersion effort parameter}
+
+\item{years}{number of years to run the simulation}
+
+\item{alpha}{probability of transitioning from immune to susceptible in one week timestep}
+
+\item{zeta_novax}{probability of becoming immune after infection (fixed when no vaccination)}
+
+\item{gamma}{spore persistence rate}
+
+\item{sigmaa}{rate of death by other causes than disease}
+
+\item{psi}{number of spores per carcass}
+
+\item{N1}{starting population size}
+
+\item{K}{carrying capacity for population dynamics}
+
+\item{vax}{vaccination rates for each year}
+
+\item{beta_0}{survival parameter}
+
+\item{beta_1}{vaccine survival parameter}
+
+\item{b_fixed}{Number of infections caused by one LIZ when dispersion effort is zero and assume no seasonality}
+
+\item{age_struc}{default is TRUE, if set to false, no population dynamics are considered}
+
+\item{stochastic}{default is FALSE, so the simulations are deterministic}
+
+\item{LIZ_init}{Initial number of carcasses, set to default 1}
+
+\item{rho_pop}{average reproduction rate to be used when simulating with population dynamics}
+
+\item{output_df}{if set to TRUE, will return a dataframe instead of a list}
+}
+\value{
+description
 }
 \description{
 This function encompasses the original functions and assumptions. It outputs a time series for each of the compartments given a set of parameters.
+}
+\examples{
+SMILE::smile_fx(-30, 0.85, 3*52, 10, 10, 10)
 }
