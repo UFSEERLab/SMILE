@@ -15,7 +15,17 @@ that publication in the [early commits of this
 repository](https://github.com/UFSEERLab/SMILE/tree/e176302c90e16205b0211906e1ef93e641776407).
 
 We are currently developing the model to incorporate the effect of
-vaccination.
+vaccination and have this as an R package.
+
+## Installation
+
+You can install the development version of SMILE from
+[GitHub](https://github.com/) with:
+
+``` r
+# install.packages("devtools")
+devtools::install_github("UFSEERLab/SMILE")
+```
 
 For contributing, please clone the repository and create a new branch.
 You can submit any changes with a pull request. For questions, please
@@ -40,13 +50,3 @@ effort and the shape of the seasonality of the envrionmental driver.
 In addition to the sorce function, we provide files with the data from a
 Montana Outbreak as well as the scripts written for the analysis ad
 figure reproduction provided in the text.
-
-## Installation
-
-You can install the development version of SMILE from
-[GitHub](https://github.com/) with:
-
-``` r
-# install.packages("devtools")
-devtools::install_github("UFSEERLab/SMILE")
-```
