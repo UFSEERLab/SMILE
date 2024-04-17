@@ -21,7 +21,3 @@ description
 \description{
 to be used with the estimation function
 }
-\examples{
-LIZ_negll()
-
-}

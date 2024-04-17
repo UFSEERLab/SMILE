@@ -103,15 +103,15 @@ smile_fx <- function(b0,b1,period,theta,tau,years,
 
     if(stochastic == TRUE) {
 
-      I[t]	<-	rbinom(1,S[tm1],lambda[tm1])
-      births	<-	rbinom(1,N[tm1],rep.prob)*births.happen
-      M.surv	<-	rbinom(1,M[tm1],sigmaa)
-      M.recov	<-	rbinom(1,M.surv,alpha)
-      M.new	<-	rbinom(1,I[tm1],zeta)
-      S[t]	<-	rbinom(1,S[tm1]-I[t],sigmaa) + M.recov + births
+      I[t]	<-	stats::rbinom(1,S[tm1],lambda[tm1])
+      births	<-	stats::rbinom(1,N[tm1],rep.prob)*births.happen
+      M.surv	<-	stats::rbinom(1,M[tm1],sigmaa)
+      M.recov	<-	stats::rbinom(1,M.surv,alpha)
+      M.new	<-	stats::rbinom(1,I[tm1],zeta)
+      S[t]	<-	stats::rbinom(1,S[tm1]-I[t],sigmaa) + M.recov + births
       M[t]	<-	M.new + (M.surv - M.recov)
       L[t]	<-	(I[tm1]-M.new)
-      E[t]	<-	rpois(1,psi*L[tm1]) + rbinom(1,E[tm1],gamma)
+      E[t]	<-	stats::rpois(1,psi*L[tm1]) + stats::rbinom(1,E[tm1],gamma)
       N[t]	<-	S[t]+M[t]
 
     } else {

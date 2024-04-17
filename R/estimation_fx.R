@@ -11,7 +11,6 @@
 #' @export
 #'
 #' @examples
-#' LIZ_negll()
 #'
 LIZ_negll	<-	function(pars=c(theta,tau,b0,b1),period,years,SMILE.obs){
 
@@ -32,7 +31,7 @@ LIZ_negll	<-	function(pars=c(theta,tau,b0,b1),period,years,SMILE.obs){
 
   for(i in 1:length(SMILE.obs)){
 
-    loglik.ls[[i]]	<-	dpois(SMILE.obs[[i]],SMILE.pred[[i]],log=TRUE)
+    loglik.ls[[i]]	<-	stats::dpois(SMILE.obs[[i]],SMILE.pred[[i]],log=TRUE)
 
   }
 
@@ -60,15 +59,14 @@ LIZ_negll	<-	function(pars=c(theta,tau,b0,b1),period,years,SMILE.obs){
 #' @export
 #'
 #' @examples
-#' SMILE_param_estim()
 #'
 SMILE_param_estim	<-	function(b0,b1,theta,tau,period,SMILE.obs,method="BFGS"){
 
   years		<- 	length(SMILE.obs[[1]])/52
   pars		<-	c(theta,tau,b0,b1)
 
-  optim.res	<-	optim(par=pars,fn=LIZ_negll,method=method,SMILE.obs=SMILE.obs
-                     ,years=years,period=period)
+  optim.res	<-	stats::optim(par=pars,fn=LIZ_negll,method=method,SMILE.obs=SMILE.obs,
+                            years=years,period=period)
 
   theta.hat	<-	exp(optim.res$par[1])
   tau.hat		<-	exp(optim.res$par[2])

@@ -27,7 +27,3 @@ description
 \description{
 Parameter estimation from data
 }
-\examples{
-SMILE_param_estim()
-
-}
