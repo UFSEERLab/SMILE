@@ -1,0 +1,90 @@
+---
+title: "add_vax"
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup, message=FALSE, warning=FALSE}
+library(SMILE)
+library(tidyverse)
+library(cowplot)
+```
+
+We incorporate vaccination into the model as a term that modifies the probability of moving from compartment I to D or M. This means, vaccination is incorporated into the model as having an effect over survival probability, by changing the probability of moving from the infected compartment to the LIZ (death) or M (Immune) compartments.
+
+As a simple exercise, we can consider a population over the course of 10 years, where the vaccination rate is held constant. In the case of a constant vaccination rate, we are essentially just changing the survival probability, and it remains the same over the course of the simulation.
+
+First, we set our parameters:
+```{r}
+# base parameters
+my_years <- 10
+my_tau <- 1
+my_theta <- 100
+
+# seasonal forcing parameters
+my_b_fixed <- 0.001
+my_b0 <- -30
+my_b1 <- 0.85
+my_outbreak_period <- 3*52
+
+# vaccination parameters
+my_zeta_no_vax <- 0.88 # survival no vaccination
+my_fixed_vax <- rep(0.5, my_years) # fixed vaccination
+my_yearly_vax <- runif(my_years, min = 0, max = 0.5) # random vaccination rates by year
+my_beta0 <- -5
+my_beta1 <- 10
+
+```
+
+
+```{r}
+smile_main(b0 = my_b0, b1 = my_b1, period = my_outbreak_period,
+           theta = my_theta, tau = my_tau, years = my_years,
+           vax = my_fixed_vax, beta_0 = my_beta0, beta_1 = my_beta1, output_df = TRUE) -> fixed_vax_sim
+
+head(fixed_vax_sim)
+```
+
+We create a simple function to help us visualize the data we just generated 
+
+```{r}
+build_SMILE_plots <- function(smile_output_as_df, facet_rows = 2) {
+  smile_output_as_df %>% 
+    pivot_longer(-week, names_to = "compartment", values_to = "n") %>% 
+    mutate(compartment = factor(compartment, levels = c("S", "M", "I", "L", "E", "Z"))) %>% 
+    ggplot(aes(x = week, y = n)) +
+    facet_wrap(~compartment, scales = "free", nrow = facet_rows) +
+    geom_path() +
+    theme_bw()
+  
+}
+```
+
+```{r}
+fixed_vax_sim |> build_SMILE_plots()
+```
+
+
+# We can compare this to variable vaccination rates:
+
+
+```{r}
+smile_main(b0 = my_b0, b1 = my_b1, period = my_outbreak_period,
+           theta = my_theta, tau = my_tau, years = my_years,
+           vax = my_yearly_vax, beta_0 = my_beta0, beta_1 = my_beta1, output_df = TRUE) -> var_vax_sim
+
+head(var_vax_sim)
+```
+```{r}
+var_vax_sim |> build_SMILE_plots()
+```
+
+
+From this simulation we observe that with drops in vaccination, we have a direct increase in the number of deaths and spores in the environment.
+
+
