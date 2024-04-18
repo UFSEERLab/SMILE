@@ -30,7 +30,7 @@
 #' @export
 #'
 #' @examples
-#' SMILE::smile_main(-30, 0.85, 3*52, 10, 10, 10)
+#' head(SMILE::smile_main(-30, 0.85, 3*52, 10, 10, 10, output_df = TRUE))
 
 smile_main <- function(b0,b1,period,theta,tau,years,
                      # fixed parameters

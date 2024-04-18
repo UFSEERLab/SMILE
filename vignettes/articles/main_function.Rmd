@@ -1,5 +1,5 @@
 ---
-title: "old_vs_new"
+title: "main_function"
 ---
 
 ```{r, include = FALSE}
@@ -8,6 +8,7 @@ knitr::opts_chunk$set(
   comment = "#>"
 )
 ```
+# Intro 
 
 Start by loading our package. In this article we want to show how the updated function works to recreate the same simulation scenarios tested in the first iteration of this code. Previously, multiple functions were needed to incorporate population dynamics or seasonality, or both. In this example, we will show you how to set the parameters to the package's main function `SMILE::smile_main()` and generate the same scenarios as before. 
 
@@ -22,7 +23,8 @@ library(tidyverse)
 library(cowplot)
 ```
 
-The code below shows the original script with the defined functions to evaluate the model under different assumptions of population dynamics or seasonal forcing. This is code show in the [first commit for this repository](https://github.com/UFSEERLab/SMILE/tree/e176302c90e16205b0211906e1ef93e641776407). 
+The original code is found in the [first commit for this repository](https://github.com/UFSEERLab/SMILE/tree/e176302c90e16205b0211906e1ef93e641776407) with the defined functions to evaluate the model under different assumptions of population dynamics or seasonal forcing. This is code show in also shown before each of the scenarios. 
+
 ```{r OG_fxs}
 # OG functions 
 
@@ -90,357 +92,6 @@ infect2clim	<-	function(wt.bar,b0,b1,kw,t,period){
 	
 	wt.bar + ((b0*b1)/kw)*cos((2*pi*t)/period)
 	
-}
-
-# Function of SMILE without any age structuring
-# This is the most basic SMILE function in which I have assumed no population dynamics
-# and no deaths other than disease related. 
-# Fixed parameters are: 
-# alpha= 1/52 Probability of an immune individual to become Suceptible 
-# zeta = 0.88 Probability that an Infected individual becomes immune
-# gamma= 0.9868 Spore decay probability
-# psi = 1 Number of spores in one LIZ
-
-# Variable parameters
-# b: Number of infections caused by one LIZ if there was no dispersion effort
-# tau and theta: Shape and Rate parameters of the gamma distribution defining dispersion effort.
-
-smile1	<-	function(b,theta,tau,years){
-			
-	# Fixed parameters
-	alpha	<-	1/52
-	zeta	<-	0.88
-	gamma	<-	0.9868
-	psi		<-	1	 
-	
-	n.weeks		<-	years*52 + 1
-	S<-	M<-	I<-	L<-E <-N<-lambda<- array(0,dim=c(n.weeks),dimnames=list(1:(n.weeks)))
-	N[1]		<-	5000
-	S[1]		<-	N[1]
-	
-	L[1]	<-	1; E[1]	<-	L[1]*psi	
-	
-	for(t in 2:n.weeks){
-		
-		tm1	<-	t-1
-		lambda[tm1]	<-	lambda.t(theta=theta,tau=tau,b=b,E=E[tm1])
-		
-		S[t]	<-	(S[tm1]*(1-lambda[tm1])) + M[tm1]*1/52
-		I[t]	<-	S[tm1]*lambda[tm1]
-		M[t]	<-	I[tm1]*zeta + M[tm1]*(1-(1/52))
-		L[t]	<-	I[tm1]*(1-zeta)
-		E[t]	<-	psi*L[tm1] + E[tm1]*gamma
-		N[t]	<-	S[t]+M[t]
-			
-	}
-	
-
-	results		<-	list(Suceptibles=S[-1]
-						,Immune=M[-1]
-						,Infected=I[-1]
-						,LIZ=L[-1]
-						,Environment=E[-1]
-						,lambda=lambda[-1])
-
-	return(results)
-}
-
-# This function simulates anthrax disease dynamics without host population dynamics
-# but infection probability has seasonal forcing.
-# Fixed parameter are the same as in smile1 function. 
-# Variable parameters tau and theta are also the same and b0, b1 and period 
-# introduce seasonality to the infection probability by modifying b. In this function
-# I assume that seasonality is product of an exponential cosine function where the intensity 
-# of the seasonality is given by b0*b1 and period gives the periodicity of the outbreak
-# tau and theta: Shape and Rate parameters of the gamma distribution defining dispersion effort.
-# period: is the period in weeks of the exponential sinusoid function
-
-smile2	<-	function(b0,b1,period,theta,tau,years){
-			
-	# Fixed parameters
-	alpha	<-	1/52
-	zeta	<-	0.88
-	gamma	<-	0.9868
-	psi		<-	1	 
-	
-	n.weeks		<-	years*52 + 1
-	S<-	M<-	I<-	L<-E <-N<-lambda<- array(0,dim=c(n.weeks),dimnames=list(1:(n.weeks)))
-	N[1]		<-	5000
-	S[1]		<-	N[1]
-	
-	L[1]	<-	1; E[1]	<-	L[1]*psi	
-	
-	for(t in 2:n.weeks){
-		
-		tm1	<-	t-1
-		b	<-	b.season(b0=b0,b1=b1,period=period,t=t)
-		lambda[tm1]	<-	lambda.t(theta=theta,tau=tau,b=b,E=E[tm1])
-		
-		S[t]	<-	(S[tm1]*(1-lambda[tm1])) + M[tm1]*1/52
-		I[t]	<-	S[tm1]*lambda[tm1]
-		M[t]	<-	I[tm1]*zeta + M[tm1]*(1-(1/52))
-		L[t]	<-	I[tm1]*(1-zeta)
-		E[t]	<-	psi*L[tm1] + E[tm1]*gamma
-		N[t]	<-	S[t]+M[t]
-			
-	}
-	
-
-	results		<-	list(Suceptibles=S[-1]
-						,Immune=M[-1]
-						,Infected=I[-1]
-						,LIZ=L[-1]
-						,Environment=E[-1]
-						,lambda=lambda[-1])
-
-	return(results)
-}
-
-# In this function I introduce population dynamics only as births at the begining of the year
-# determined by density dependent reproduction with a carrying capacity of 5000.
-
-smile3	<-	function(b,theta,tau,years){
-			
-	# Fixed parameters
-	alpha	<-	1/52
-	zeta	<-	0.88
-	gamma	<-	0.9868
-	psi		<-	1	 
-	
-	n.weeks		<-	years*52 + 1
-	S<-	M<-	I<-	L<-E <-N<-lambda<- array(0,dim=c(n.weeks),dimnames=list(1:(n.weeks)))
-	N[1]		<-	5000
-	S[1]		<-	N[1]	
-	L[1]	<-	1; E[1]	<-	L[1]*psi	
-	
-	for(t in 2:n.weeks){
-				
-		tm1	<-	t-1
-		lambda[tm1]	<-	lambda.t(theta=theta,tau=tau,b=b,E=E[tm1])
-		births.happen	<-	as.numeric(t%%52==0)
-		rep.prob	<-	rho.n(N[tm1])
-		
-		S[t]	<-	(S[tm1]*(1-lambda[tm1])) + M[tm1]*1/52 + rep.prob*(N[tm1])*births.happen
-		I[t]	<-	S[tm1]*lambda[tm1]
-		M[t]	<-	I[tm1]*zeta + M[tm1]*(1-(1/52))
-		L[t]	<-	I[tm1]*(1-zeta)
-		E[t]	<-	psi*L[tm1] + E[tm1]*gamma
-		N[t]	<-	S[t]+M[t]
-			
-	}
-	
-
-	results		<-	list(Suceptibles=S[-1]
-						,Immune=M[-1]
-						,Infected=I[-1]
-						,LIZ=L[-1]
-						,Environment=E[-1]
-						,lambda=lambda[-1])
-
-	return(results)
-}
-
-# smile 4 function introduces population dynamics as in smile3 function but uses 
-# seasonal forcing for infection probability.
-
-smile4	<-	function(b0,b1,period,theta,tau,years){
-			
-	# Fixed parameters
-	alpha	<-	1/52
-	zeta	<-	0.88
-	gamma	<-	0.9868
-	psi		<-	1	 
-	
-	n.weeks		<-	years*52 + 1
-	S<-	M<-	I<-	L<-E <-N<-lambda<- array(0,dim=c(n.weeks),dimnames=list(1:(n.weeks)))
-	N[1]		<-	5000
-	S[1]		<-	N[1]	
-	L[1]	<-	1; E[1]	<-	L[1]*psi	
-	
-	for(t in 2:n.weeks){
-				
-		tm1	<-	t-1
-		b	<-	b.season(b0,b1,period,t)
-		lambda[tm1]	<-	lambda.t(theta=theta,tau=tau,b=b,E=E[tm1])
-		births.happen	<-	as.numeric(t%%52==0)
-		rep.prob	<-	rho.n(N[tm1])
-		
-		S[t]	<-	(S[tm1]*(1-lambda[tm1])) + M[tm1]*1/52 + rep.prob*(N[tm1])*births.happen
-		I[t]	<-	S[tm1]*lambda[tm1]
-		M[t]	<-	I[tm1]*zeta + M[tm1]*(1-(1/52))
-		L[t]	<-	I[tm1]*(1-zeta)
-		E[t]	<-	psi*L[tm1] + E[tm1]*gamma
-		N[t]	<-	S[t]+M[t]
-			
-	}
-	
-
-	results		<-	list(Suceptibles=S[-1]
-						,Immune=M[-1]
-						,Infected=I[-1]
-						,LIZ=L[-1]
-						,Environment=E[-1]
-						,lambda=lambda[-1])
-
-	return(results)
-}
-
-# smile5 is the most realistic function of the group since it incorporates both births and deaths from other causes
-# than the disease in population dynamics. Deaths are given by a 1- sigmaa = 1 - 0.92^(1/52)
-smile5	<-	function(b0,b1,period,theta,tau,years){
-			
-	# Fixed parameters
-	alpha	<-	1/52
-	zeta	<-	0.88
-	gamma	<-	0.9868
-	sigmaa	<-	0.92^(1/52)
-	psi		<-	1	 
-	
-	n.weeks		<-	years*52 + 1
-	S<-	M<-	I<-	L<-E <-N<-lambda<- array(0,dim=c(n.weeks),dimnames=list(1:(n.weeks)))
-	N[1]		<-	5000
-	S[1]		<-	N[1]	
-	L[1]	<-	1; E[1]	<-	L[1]*psi	
-	
-	for(t in 2:n.weeks){
-				
-		tm1	<-	t-1
-		b	<-	b.season(b0,b1,period,t)
-		lambda[tm1]	<-	lambda.t(theta=theta,tau=tau,b=b,E=E[tm1])
-		births.happen	<-	as.numeric(t%%52==0)
-		rep.prob	<-	rho.n(N[tm1])
-		
-		S[t]	<-	(S[tm1]*(1-lambda[tm1]))*sigmaa + M[tm1]*sigmaa*1/52 + rep.prob*(N[tm1])*births.happen
-		I[t]	<-	S[tm1]*lambda[tm1]
-		M[t]	<-	I[tm1]*zeta + M[tm1]*sigmaa*(1-(1/52))
-		L[t]	<-	I[tm1]*(1-zeta)
-		E[t]	<-	psi*L[tm1] + E[tm1]*gamma
-		N[t]	<-	S[t]+M[t]
-			
-	}
-	
-
-	results		<-	list(Suceptibles=S[-1]
-						,Immune=M[-1]
-						,Infected=I[-1]
-						,LIZ=L[-1]
-						,Environment=E[-1])
-
-	return(results)
-}
-
-# Final function is the stochastic version of smile5 function. It incorporates births, deaths by disease
-# and other causes and seasonal forcing of the infection probability. The stochasticity is introduced by 
-# assuming that Infected, Immune and LIZ are all binomial random variables. I allowed stochasticity in the 
-# number of spores introduced to the environment by assuming that it is poisson random variable with mean
-# given by the number of diseas deaths times a constant. Virulence of spores that remain virulent in the 
-# environment is also a binomial random variable with with probability of succes gamma = 0.9868.
-
-smile5.stoch	<-	function(b0,b1,period,theta,tau,years){
-			
-	# Fixed parameters
-	alpha	<-	1/52
-	zeta	<-	0.88
-	gamma	<-	0.9868
-	sigmaa	<-	0.92^(1/52)
-	psi		<-	1	 
-	
-	n.weeks		<-	years*52 + 1
-	S<-	M<-	I<-	L<-E <-N<-lambda<- array(0,dim=c(n.weeks),dimnames=list(1:(n.weeks)))
-	N[1]		<-	5000
-	S[1]		<-	N[1]	
-	L[1]	<-	1; E[1]	<-	rpois(1,L[1]*psi	)
-	
-	for(t in 2:n.weeks){
-				
-		tm1	<-	t-1
-		b	<-	b.season(b0,b1,period,t)
-		lambda[tm1]	<-	lambda.t(theta=theta,tau=tau,b=b,E=E[tm1])
-		births.happen	<-	as.numeric(t%%52==0)
-		rep.prob	<-	rho.n(N[tm1])
-		
-		I[t]	<-	rbinom(1,S[tm1],lambda[tm1])
-		births	<-	rbinom(1,N[tm1],rep.prob)*births.happen
-		M.surv	<-	rbinom(1,M[tm1],sigmaa)
-		M.recov	<-	rbinom(1,M.surv,alpha)
-		M.new	<-	rbinom(1,I[tm1],zeta)
-		S[t]	<-	rbinom(1,S[tm1]-I[t],sigmaa) + M.recov + births
-		M[t]	<-	M.new + (M.surv - M.recov)
-		L[t]	<-	(I[tm1]-M.new)
-		E[t]	<-	rpois(1,psi*L[tm1]) + rbinom(1,E[tm1],gamma)
-		N[t]	<-	S[t]+M[t]
-			
-	}
-	
-
-	results		<-	list(Suceptibles=S[-1]
-						,Immune=M[-1]
-						,Infected=I[-1]
-						,LIZ=L[-1]
-						,Environment=E[-1])
-
-	return(results)
-}
-
-# Functions for estimating the parameters of the SMILE model b0, b1, period, theta and tau.
-# The estimation assumes that the observed LIZ are poisson distributed product of observation error
-# and not process error as properly described in the smile5.stoch function. This is a set of two functions
-# the first one gives the negative loglikelihood of the model that will be minimized using the optim function.
-# The second one is a wrapper of the optim function that returns the maximum likelihood estimates of the parameters.
-# Period must be in weeks and SMILE.obs must follow exactly the formating of the output of one of the above SMILE 
-# functions.
-
-LIZ.negll	<-	function(pars=c(theta,tau,b0,b1),period,years,SMILE.obs){
-		
-	theta	<-	exp(pars[1])
-	tau		<-	exp(pars[2])
-	b0		<-	pars[3]
-	b1		<-	pars[4]
-	# Likelihood of infection seasonality as a function of climate
-	
-	#wt.bar.hat	<-	mean(clim)
-	#clim.pred	<-	infect2clim(wt.bar=wt.bar.hat,b0=b0,b1=b1,kw=kw,t=1:length(clim),period=period)
-	#clim.ssq	<-	sum((clim-clim.pred)^2)
-	
-	SMILE.pred	<-	smile5(b0,b1,period,theta,tau,years)
-	ts2keep		<-	names(SMILE.pred)%in%names(SMILE.obs)
-	SMILE.pred	<-	SMILE.pred[which(ts2keep==TRUE)]
-	loglik.ls	<-	vector("list",length(SMILE.obs))
-	
-	for(i in 1:length(SMILE.obs)){
-		
-		loglik.ls[[i]]	<-	dpois(SMILE.obs[[i]],SMILE.pred[[i]],log=TRUE)
-		
-	}
-	
-	loglik.ls	<-	lapply(loglik.ls,sum)
-	
-	loglik	<-	sum(unlist(loglik.ls))
-	
-	if(!is.finite(loglik)){loglik=-.Machine$double.xmax}
-	negll	<-	-loglik #+ clim.ssq
-	return(negll)
-	
-}
-
-SMILE.param.estim	<-	function(b0,b1,theta,tau,period,SMILE.obs,method="BFGS"){
-	
-	years		<- 	length(SMILE.obs[[1]])/52
-	pars		<-	c(theta,tau,b0,b1)
-			
-	optim.res	<-	optim(par=pars,fn=LIZ.negll,method=method,SMILE.obs=SMILE.obs
-								,years=years,period=period)
-		
-	theta.hat	<-	exp(optim.res$par[1])
-	tau.hat		<-	exp(optim.res$par[2])
-	b0.hat		<-	optim.res$par[3]
-	b1.hat		<-	optim.res$par[4]
-
-	
-	neg.ll		<-	optim.res$value
-	
-	results		<-	c(tau=tau.hat,theta=theta.hat,b0=b0.hat,b1=b1.hat,loglik=-neg.ll)
-	return(results)
 }
 
 ```
@@ -520,7 +171,63 @@ build_comp_plots <- function(og_sims, new_sims) {
 ```
 
 # smile1
-No age structuring, infection probability is not seasonal
+No age structuring, infection probability is not seasonal 
+
+```{r}
+# Function of SMILE without any age structuring
+# This is the most basic SMILE function in which I have assumed no population dynamics
+# and no deaths other than disease related. 
+# Fixed parameters are: 
+# alpha= 1/52 Probability of an immune individual to become Suceptible 
+# zeta = 0.88 Probability that an Infected individual becomes immune
+# gamma= 0.9868 Spore decay probability
+# psi = 1 Number of spores in one LIZ
+
+# Variable parameters
+# b: Number of infections caused by one LIZ if there was no dispersion effort
+# tau and theta: Shape and Rate parameters of the gamma distribution defining dispersion effort.
+
+smile1	<-	function(b,theta,tau,years){
+			
+	# Fixed parameters
+	alpha	<-	1/52
+	zeta	<-	0.88
+	gamma	<-	0.9868
+	psi		<-	1	 
+	
+	n.weeks		<-	years*52 + 1
+	S<-	M<-	I<-	L<-E <-N<-lambda<- array(0,dim=c(n.weeks),dimnames=list(1:(n.weeks)))
+	N[1]		<-	5000
+	S[1]		<-	N[1]
+	
+	L[1]	<-	1; E[1]	<-	L[1]*psi	
+	
+	for(t in 2:n.weeks){
+		
+		tm1	<-	t-1
+		lambda[tm1]	<-	lambda.t(theta=theta,tau=tau,b=b,E=E[tm1])
+		
+		S[t]	<-	(S[tm1]*(1-lambda[tm1])) + M[tm1]*1/52
+		I[t]	<-	S[tm1]*lambda[tm1]
+		M[t]	<-	I[tm1]*zeta + M[tm1]*(1-(1/52))
+		L[t]	<-	I[tm1]*(1-zeta)
+		E[t]	<-	psi*L[tm1] + E[tm1]*gamma
+		N[t]	<-	S[t]+M[t]
+			
+	}
+	
+
+	results		<-	list(Suceptibles=S[-1]
+						,Immune=M[-1]
+						,Infected=I[-1]
+						,LIZ=L[-1]
+						,Environment=E[-1]
+						,lambda=lambda[-1])
+
+	return(results)
+}
+```
+
 ```{r}
 tau=10
 b=0.001
@@ -544,6 +251,60 @@ build_comp_plots(sim1.0, sim1_1)
 
 # smile2
 This function simulates anthrax disease dynamics without host population dynamics but infection probability has seasonal forcing.
+
+```{r}
+# This function simulates anthrax disease dynamics without host population dynamics
+# but infection probability has seasonal forcing.
+# Fixed parameter are the same as in smile1 function. 
+# Variable parameters tau and theta are also the same and b0, b1 and period 
+# introduce seasonality to the infection probability by modifying b. In this function
+# I assume that seasonality is product of an exponential cosine function where the intensity 
+# of the seasonality is given by b0*b1 and period gives the periodicity of the outbreak
+# tau and theta: Shape and Rate parameters of the gamma distribution defining dispersion effort.
+# period: is the period in weeks of the exponential sinusoid function
+
+smile2	<-	function(b0,b1,period,theta,tau,years){
+			
+	# Fixed parameters
+	alpha	<-	1/52
+	zeta	<-	0.88
+	gamma	<-	0.9868
+	psi		<-	1	 
+	
+	n.weeks		<-	years*52 + 1
+	S<-	M<-	I<-	L<-E <-N<-lambda<- array(0,dim=c(n.weeks),dimnames=list(1:(n.weeks)))
+	N[1]		<-	5000
+	S[1]		<-	N[1]
+	
+	L[1]	<-	1; E[1]	<-	L[1]*psi	
+	
+	for(t in 2:n.weeks){
+		
+		tm1	<-	t-1
+		b	<-	b.season(b0=b0,b1=b1,period=period,t=t)
+		lambda[tm1]	<-	lambda.t(theta=theta,tau=tau,b=b,E=E[tm1])
+		
+		S[t]	<-	(S[tm1]*(1-lambda[tm1])) + M[tm1]*1/52
+		I[t]	<-	S[tm1]*lambda[tm1]
+		M[t]	<-	I[tm1]*zeta + M[tm1]*(1-(1/52))
+		L[t]	<-	I[tm1]*(1-zeta)
+		E[t]	<-	psi*L[tm1] + E[tm1]*gamma
+		N[t]	<-	S[t]+M[t]
+			
+	}
+	
+
+	results		<-	list(Suceptibles=S[-1]
+						,Immune=M[-1]
+						,Infected=I[-1]
+						,LIZ=L[-1]
+						,Environment=E[-1]
+						,lambda=lambda[-1])
+
+	return(results)
+}
+```
+
 ```{r}
 # Case 2: No age structuring, infection probability has seasonal forcing
 tau=10
@@ -569,6 +330,53 @@ build_comp_plots(sim2.0, sim2_1)
 
 # smile3
 Only births with no seasonal infection probability 
+
+```{r}
+# In this function we introduce population dynamics only as births at the begining of the year
+# determined by density dependent reproduction with a carrying capacity of 5000.
+
+smile3	<-	function(b,theta,tau,years){
+			
+	# Fixed parameters
+	alpha	<-	1/52
+	zeta	<-	0.88
+	gamma	<-	0.9868
+	psi		<-	1	 
+	
+	n.weeks		<-	years*52 + 1
+	S<-	M<-	I<-	L<-E <-N<-lambda<- array(0,dim=c(n.weeks),dimnames=list(1:(n.weeks)))
+	N[1]		<-	5000
+	S[1]		<-	N[1]	
+	L[1]	<-	1; E[1]	<-	L[1]*psi	
+	
+	for(t in 2:n.weeks){
+				
+		tm1	<-	t-1
+		lambda[tm1]	<-	lambda.t(theta=theta,tau=tau,b=b,E=E[tm1])
+		births.happen	<-	as.numeric(t%%52==0)
+		rep.prob	<-	rho.n(N[tm1])
+		
+		S[t]	<-	(S[tm1]*(1-lambda[tm1])) + M[tm1]*1/52 + rep.prob*(N[tm1])*births.happen
+		I[t]	<-	S[tm1]*lambda[tm1]
+		M[t]	<-	I[tm1]*zeta + M[tm1]*(1-(1/52))
+		L[t]	<-	I[tm1]*(1-zeta)
+		E[t]	<-	psi*L[tm1] + E[tm1]*gamma
+		N[t]	<-	S[t]+M[t]
+			
+	}
+	
+
+	results		<-	list(Suceptibles=S[-1]
+						,Immune=M[-1]
+						,Infected=I[-1]
+						,LIZ=L[-1]
+						,Environment=E[-1]
+						,lambda=lambda[-1])
+
+	return(results)
+}
+```
+
 ```{r}
 # Case 3: With births and no seasonal infection probability
 tau=10
@@ -592,7 +400,55 @@ build_comp_plots(sim3.0, sim3_1)
 
 
 # smile4 
- With births only and seasonal forcing of infection
+ With births only and seasonal forcing of infection 
+ 
+```{r}
+# smile 4 function introduces population dynamics as in smile3 function but uses 
+# seasonal forcing for infection probability.
+
+smile4	<-	function(b0,b1,period,theta,tau,years){
+			
+	# Fixed parameters
+	alpha	<-	1/52
+	zeta	<-	0.88
+	gamma	<-	0.9868
+	psi		<-	1	 
+	
+	n.weeks		<-	years*52 + 1
+	S<-	M<-	I<-	L<-E <-N<-lambda<- array(0,dim=c(n.weeks),dimnames=list(1:(n.weeks)))
+	N[1]		<-	5000
+	S[1]		<-	N[1]	
+	L[1]	<-	1; E[1]	<-	L[1]*psi	
+	
+	for(t in 2:n.weeks){
+				
+		tm1	<-	t-1
+		b	<-	b.season(b0,b1,period,t)
+		lambda[tm1]	<-	lambda.t(theta=theta,tau=tau,b=b,E=E[tm1])
+		births.happen	<-	as.numeric(t%%52==0)
+		rep.prob	<-	rho.n(N[tm1])
+		
+		S[t]	<-	(S[tm1]*(1-lambda[tm1])) + M[tm1]*1/52 + rep.prob*(N[tm1])*births.happen
+		I[t]	<-	S[tm1]*lambda[tm1]
+		M[t]	<-	I[tm1]*zeta + M[tm1]*(1-(1/52))
+		L[t]	<-	I[tm1]*(1-zeta)
+		E[t]	<-	psi*L[tm1] + E[tm1]*gamma
+		N[t]	<-	S[t]+M[t]
+			
+	}
+	
+
+	results		<-	list(Suceptibles=S[-1]
+						,Immune=M[-1]
+						,Infected=I[-1]
+						,LIZ=L[-1]
+						,Environment=E[-1]
+						,lambda=lambda[-1])
+
+	return(results)
+}
+
+```
  
 ```{r}
 tau=10
@@ -621,6 +477,54 @@ build_comp_plots(sim4.0, sim4_1)
 This one incorporates both host population dynamics and seasonal forcing, but additionally puts in the death by other causes.
 
 ```{r}
+# smile5 is the most realistic function of the group since it incorporates both births and deaths from other causes
+# than the disease in population dynamics. Deaths are given by a 1- sigmaa = 1 - 0.92^(1/52)
+smile5	<-	function(b0,b1,period,theta,tau,years){
+			
+	# Fixed parameters
+	alpha	<-	1/52
+	zeta	<-	0.88
+	gamma	<-	0.9868
+	sigmaa	<-	0.92^(1/52)
+	psi		<-	1	 
+	
+	n.weeks		<-	years*52 + 1
+	S<-	M<-	I<-	L<-E <-N<-lambda<- array(0,dim=c(n.weeks),dimnames=list(1:(n.weeks)))
+	N[1]		<-	5000
+	S[1]		<-	N[1]	
+	L[1]	<-	1; E[1]	<-	L[1]*psi	
+	
+	for(t in 2:n.weeks){
+				
+		tm1	<-	t-1
+		b	<-	b.season(b0,b1,period,t)
+		lambda[tm1]	<-	lambda.t(theta=theta,tau=tau,b=b,E=E[tm1])
+		births.happen	<-	as.numeric(t%%52==0)
+		rep.prob	<-	rho.n(N[tm1])
+		
+		S[t]	<-	(S[tm1]*(1-lambda[tm1]))*sigmaa + M[tm1]*sigmaa*1/52 + rep.prob*(N[tm1])*births.happen
+		I[t]	<-	S[tm1]*lambda[tm1]
+		M[t]	<-	I[tm1]*zeta + M[tm1]*sigmaa*(1-(1/52))
+		L[t]	<-	I[tm1]*(1-zeta)
+		E[t]	<-	psi*L[tm1] + E[tm1]*gamma
+		N[t]	<-	S[t]+M[t]
+			
+	}
+	
+
+	results		<-	list(Suceptibles=S[-1]
+						,Immune=M[-1]
+						,Infected=I[-1]
+						,LIZ=L[-1]
+						,Environment=E[-1])
+
+	return(results)
+}
+
+```
+
+
+```{r}
 tau=10
 b0=-30
 b1=0.85
@@ -644,6 +548,63 @@ build_comp_plots(sim5.0, sim5_1)
 # Stochastic version of the last one:
 
 ```{r}
+# Final function is the stochastic version of smile5 function. It incorporates births, deaths by disease
+# and other causes and seasonal forcing of the infection probability. The stochasticity is introduced by 
+# assuming that Infected, Immune and LIZ are all binomial random variables. I allowed stochasticity in the 
+# number of spores introduced to the environment by assuming that it is poisson random variable with mean
+# given by the number of diseas deaths times a constant. Virulence of spores that remain virulent in the 
+# environment is also a binomial random variable with with probability of succes gamma = 0.9868.
+
+smile5.stoch	<-	function(b0,b1,period,theta,tau,years){
+			
+	# Fixed parameters
+	alpha	<-	1/52
+	zeta	<-	0.88
+	gamma	<-	0.9868
+	sigmaa	<-	0.92^(1/52)
+	psi		<-	1	 
+	
+	n.weeks		<-	years*52 + 1
+	S<-	M<-	I<-	L<-E <-N<-lambda<- array(0,dim=c(n.weeks),dimnames=list(1:(n.weeks)))
+	N[1]		<-	5000
+	S[1]		<-	N[1]	
+	L[1]	<-	1; E[1]	<-	rpois(1,L[1]*psi	)
+	
+	for(t in 2:n.weeks){
+				
+		tm1	<-	t-1
+		b	<-	b.season(b0,b1,period,t)
+		lambda[tm1]	<-	lambda.t(theta=theta,tau=tau,b=b,E=E[tm1])
+		births.happen	<-	as.numeric(t%%52==0)
+		rep.prob	<-	rho.n(N[tm1])
+		
+		I[t]	<-	rbinom(1,S[tm1],lambda[tm1])
+		births	<-	rbinom(1,N[tm1],rep.prob)*births.happen
+		M.surv	<-	rbinom(1,M[tm1],sigmaa)
+		M.recov	<-	rbinom(1,M.surv,alpha)
+		M.new	<-	rbinom(1,I[tm1],zeta)
+		S[t]	<-	rbinom(1,S[tm1]-I[t],sigmaa) + M.recov + births
+		M[t]	<-	M.new + (M.surv - M.recov)
+		L[t]	<-	(I[tm1]-M.new)
+		E[t]	<-	rpois(1,psi*L[tm1]) + rbinom(1,E[tm1],gamma)
+		N[t]	<-	S[t]+M[t]
+			
+	}
+	
+
+	results		<-	list(Suceptibles=S[-1]
+						,Immune=M[-1]
+						,Infected=I[-1]
+						,LIZ=L[-1]
+						,Environment=E[-1])
+
+	return(results)
+}
+
+```
+
+
+```{r}
 stochastic.sims	<-	list()
 LIZ.stoch		<-	matrix(0,nrow=100,ncol=520)
 for(i in 1:100){
@@ -662,7 +623,7 @@ for(i in 1:100){
   
 	stochastic_sims[[i]]	<-	smile_main(b0 = b0, b1 = b1, period = period, theta = theta, tau = tau, years = 10, sigmaa = 0.92^(1/52), 
 	                                   stochastic = TRUE)
-	LIZ_stoch[i,]			<-	stochastic.sims[[i]]$LIZ
+	LIZ_stoch[i,]			<-	stochastic_sims[[i]]$LIZ
 	
 }
 
@@ -691,9 +652,143 @@ bind_rows(og_stochastic, new_stochastic) %>%
   geom_line() +
   theme_minimal()
 ```
-Try to get the estimates from these stochastic sims:
+
+# Estimation 
+Estimation of parameters using the last scenario and stochastic simulations
 
 ```{r}
+# Functions for estimating the parameters of the SMILE model b0, b1, period, theta and tau.
+# The estimation assumes that the observed LIZ are poisson distributed product of observation error
+# and not process error as properly described in the smile5.stoch function. This is a set of two functions
+# the first one gives the negative loglikelihood of the model that will be minimized using the optim function.
+# The second one is a wrapper of the optim function that returns the maximum likelihood estimates of the parameters.
+# Period must be in weeks and SMILE.obs must follow exactly the formating of the output of one of the above SMILE 
+# functions.
+
+LIZ.negll	<-	function(pars=c(theta,tau,b0,b1),period,years,SMILE.obs){
+		
+	theta	<-	exp(pars[1])
+	tau		<-	exp(pars[2])
+	b0		<-	pars[3]
+	b1		<-	pars[4]
+	# Likelihood of infection seasonality as a function of climate
+	
+	#wt.bar.hat	<-	mean(clim)
+	#clim.pred	<-	infect2clim(wt.bar=wt.bar.hat,b0=b0,b1=b1,kw=kw,t=1:length(clim),period=period)
+	#clim.ssq	<-	sum((clim-clim.pred)^2)
+	
+	SMILE.pred	<-	smile5(b0,b1,period,theta,tau,years)
+	ts2keep		<-	names(SMILE.pred)%in%names(SMILE.obs)
+	SMILE.pred	<-	SMILE.pred[which(ts2keep==TRUE)]
+	loglik.ls	<-	vector("list",length(SMILE.obs))
+	
+	for(i in 1:length(SMILE.obs)){
+		
+		loglik.ls[[i]]	<-	dpois(SMILE.obs[[i]],SMILE.pred[[i]],log=TRUE)
+		
+	}
+	
+	loglik.ls	<-	lapply(loglik.ls,sum)
+	
+	loglik	<-	sum(unlist(loglik.ls))
+	
+	if(!is.finite(loglik)){loglik=-.Machine$double.xmax}
+	negll	<-	-loglik #+ clim.ssq
+	return(negll)
+	
+}
+
+SMILE.param.estim	<-	function(b0,b1,theta,tau,period,SMILE.obs,method="BFGS"){
+	
+	years		<- 	length(SMILE.obs[[1]])/52
+	pars		<-	c(theta,tau,b0,b1)
+			
+	optim.res	<-	optim(par=pars,fn=LIZ.negll,method=method,SMILE.obs=SMILE.obs
+								,years=years,period=period)
+		
+	theta.hat	<-	exp(optim.res$par[1])
+	tau.hat		<-	exp(optim.res$par[2])
+	b0.hat		<-	optim.res$par[3]
+	b1.hat		<-	optim.res$par[4]
+
+	
+	neg.ll		<-	optim.res$value
+	
+	results		<-	c(tau=tau.hat,theta=theta.hat,b0=b0.hat,b1=b1.hat,loglik=-neg.ll)
+	return(results)
+}
+```
+
+
+
+```{r}
+set.seed(123) 
+b0_start	<-	runif(1,min=-36,max=-24) 
+b1_start	<-	runif(1,min=0.656,max=0.984) 
+theta_start	<-	log(runif(1,min=8,max=12)) 
+tau_start	<-	log(runif(1,min=8,max=12))
+
+SMILE_obs <- stochastic.sims
+nreps <- length(SMILE_obs)
+
+hat_mat			<-	array(0,dim=c(nreps,5),dimnames=list(1:nreps
+															 ,c("tau","theta","b0","b1","loglik")))
+
+for(i in 1:nreps){
+	
+	hat_mat[i,]	<-	SMILE.param.estim(b0 = b0_start,
+	                                 b1 = b1_start,
+	                                 theta = theta_start,
+	                                 tau = tau_start,
+	                                 SMILE.obs=SMILE_obs[[i]],period=3*52)
+								}
+```
+
+```{r echo=FALSE}
+
+# estimates from the stochastic simulations
+hat_mat %>% as.data.frame() %>% rownames_to_column(var = "run") %>% 
+  pivot_longer(-run, names_to = "parameter") -> long_hatmat
+
+long_hatmat %>% 
+  filter(parameter == "b0") %>% 
+  ggplot(aes(x = value)) +
+  geom_density() +
+  geom_vline(xintercept = b0, color = "red") +
+  labs(title = "b0") +
+  theme_classic() -> b0_plot
+
+long_hatmat %>% 
+  filter(parameter == "b1") %>% 
+  ggplot(aes(x = value)) +
+  geom_density() +
+  geom_vline(xintercept = b1, color = "red") +
+  labs(title = "b1") +
+  theme_classic() -> b1_plot
+
+long_hatmat %>% 
+  filter(parameter == "theta") %>% 
+  ggplot(aes(x = value)) +
+  geom_density() +
+  geom_vline(xintercept = theta, color = "red") +
+  labs(title = "theta") +
+  theme_classic() -> theta_plot
+
+long_hatmat %>% 
+  filter(parameter == "tau") %>% 
+  ggplot(aes(x = value)) +
+  geom_density() +
+  geom_vline(xintercept = tau, color = "red") +
+  labs(title = "tau") +
+  theme_classic() -> tau_plot
+
+plot_grid(b0_plot, b1_plot, theta_plot, tau_plot, nrow = 2)
+
+```
+
+## with the new functions 
+
+```{r eval=FALSE}
 set.seed(123) 
 b0_start	<-	runif(1,min=-36,max=-24) 
 b1_start	<-	runif(1,min=0.656,max=0.984) 
@@ -718,7 +813,7 @@ for(i in 1:nreps){
 
 Parameter estimates for each of the stochastic simulations we generated. All simulations used the values shown with the red line to be generated. 
 
-```{r}
+```{r echo=FALSE}
 
 # estimates from the stochastic simulations
 hat_mat %>% as.data.frame() %>% rownames_to_column(var = "run") %>% 
@@ -728,28 +823,32 @@ long_hatmat %>%
   filter(parameter == "b0") %>% 
   ggplot(aes(x = value)) +
   geom_density() +
-  geom_vline(xintercept = -30, color = "red") +
+  geom_vline(xintercept = b0, color = "red") +
+  labs(title = "b0") +
   theme_classic() -> b0_plot
 
 long_hatmat %>% 
   filter(parameter == "b1") %>% 
   ggplot(aes(x = value)) +
   geom_density() +
-  geom_vline(xintercept = 0.85, color = "red") +
+  geom_vline(xintercept = b1, color = "red") +
+  labs(title = "b1") +
   theme_classic() -> b1_plot
 
 long_hatmat %>% 
   filter(parameter == "theta") %>% 
   ggplot(aes(x = value)) +
   geom_density() +
-  geom_vline(xintercept = 10, color = "red") +
+  geom_vline(xintercept = theta, color = "red") +
+  labs(title = "theta") +
   theme_classic() -> theta_plot
 
 long_hatmat %>% 
   filter(parameter == "tau") %>% 
   ggplot(aes(x = value)) +
   geom_density() +
-  geom_vline(xintercept = 10, color = "red") +
+  geom_vline(xintercept = tau, color = "red") +
+  labs(title = "tau") +
   theme_classic() -> tau_plot
 
 plot_grid(b0_plot, b1_plot, theta_plot, tau_plot, nrow = 2)
