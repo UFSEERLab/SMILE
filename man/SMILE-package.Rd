@@ -4,7 +4,7 @@
 \name{SMILE-package}
 \alias{SMILE}
 \alias{SMILE-package}
-\title{SMILE: Compartmental model for anthrax.}
+\title{SMILE: Compartmental models for anthrax.}
 \description{
 Code from our papers to model anthrax dynamics using compartmental models.
 }

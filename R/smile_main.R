@@ -1,5 +1,5 @@
 
-#' SMILE function
+#' SMILE main function
 #'
 #' This function encompasses the original functions and assumptions. It outputs a time series for each of the compartments given a set of parameters.
 #'
@@ -30,9 +30,9 @@
 #' @export
 #'
 #' @examples
-#' SMILE::smile_fx(-30, 0.85, 3*52, 10, 10, 10)
+#' SMILE::smile_main(-30, 0.85, 3*52, 10, 10, 10)
 
-smile_fx <- function(b0,b1,period,theta,tau,years,
+smile_main <- function(b0,b1,period,theta,tau,years,
                      # fixed parameters
                      # Fixed parameters
                      alpha =	1/52,
@@ -57,7 +57,7 @@ smile_fx <- function(b0,b1,period,theta,tau,years,
 
   if(is.null(vax) == FALSE) {
     if(is.null(beta_0) == TRUE){
-      print("stop! you need beta_0 and beta_1 to calculate vaccine coverage")
+      cli::cli_abort("you need beta_0 and beta_1 to calculate vaccine coverage")
     } else {
       # zeta_0 <- -0.25 * (vax - 1)^2 + 0.999
       zeta_0 <- 1 / (1 + exp(-(beta_0 + beta_1 * vax)))
