@@ -1,5 +1,5 @@
 Package: SMILE
-Title: Compartmental model for anthrax.
+Title: Compartmental models for anthrax.
 Version: 0.0.0.9000
 Authors@R: 
     person("javi", "rudolph", , "javiera.av@ufl.edu", role = c("aut", "cre"))

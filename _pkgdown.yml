@@ -1,7 +1,5 @@
 url: https://ufseerlab.github.io/SMILE/, https://github.com/UFSEERLab/SMILE
 
-home:
-  title: Compartmental models for anthrax dynamics
 
 template:
   bootstrap: 5
