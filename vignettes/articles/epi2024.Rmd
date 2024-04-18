@@ -69,7 +69,7 @@ b = 0.001
 ```
 
 ```{r}
-vax_smile6 <- smile_fx(b0 = NULL, b1 = NULL, period = NULL, theta = theta, tau = tau, years = n_years, 
+vax_smile6 <- smile_main(b0 = NULL, b1 = NULL, period = NULL, theta = theta, tau = tau, years = n_years, 
                        beta_0 = beta_0, beta_1 = beta_1, vax = vacc.pcts, N1 = 20000, K = 50000,
                        b_fixed = b, rho_pop = 0.36, output_df = TRUE)
 build_SMILE_plots(vax_smile6)
@@ -206,7 +206,7 @@ high_surv <- my_vax_curves %>% filter(betas_0 == 1.5 & vax_prcnt == 0) %>%  pull
  
 ## LOW SURVIVAL 
 ```{r}
-novax_noseason <- smile_fx(theta = my_theta, tau = my_tau, years = 23,
+novax_noseason <- smile_main(theta = my_theta, tau = my_tau, years = 23,
                             # fixed survival probability and fixed b
                             zeta_novax = low_surv, b_fixed = my_b_fixed,
                             # parameters for host population dynamics include births and deaths
@@ -215,7 +215,7 @@ novax_noseason <- smile_fx(theta = my_theta, tau = my_tau, years = 23,
 
 # novax_noseason %>% build_SMILE_plots()
 
-novax_yesseason <- smile_fx(theta = my_theta, tau = my_tau, years = 23,
+novax_yesseason <- smile_main(theta = my_theta, tau = my_tau, years = 23,
                             # fixed survival probability
                             zeta_novax = low_surv,
                             # Parameters to induce seasonal forcing in transmission
@@ -259,7 +259,7 @@ bind_rows(long_novax_noseason, long_novax_yesseason) %>%
 ## MED SURVIVAL  
 
 ```{r}
-novax_noseason <- smile_fx(theta = my_theta, tau = my_tau, years = 23,
+novax_noseason <- smile_main(theta = my_theta, tau = my_tau, years = 23,
                             # fixed survival probability and fixed b
                             zeta_novax = med_surv, b_fixed = my_b_fixed,
                             # parameters for host population dynamics include births and deaths
@@ -268,7 +268,7 @@ novax_noseason <- smile_fx(theta = my_theta, tau = my_tau, years = 23,
 
 # novax_noseason %>% build_SMILE_plots()
 
-novax_yesseason <- smile_fx(theta = my_theta, tau = my_tau, years = 23,
+novax_yesseason <- smile_main(theta = my_theta, tau = my_tau, years = 23,
                             # fixed survival probability
                             zeta_novax = med_surv,
                             # Parameters to induce seasonal forcing in transmission
@@ -313,7 +313,7 @@ bind_rows(long_novax_noseason, long_novax_yesseason) %>%
 
 ## HIGH SURVIVAL 
 ```{r}
-novax_noseason <- smile_fx(theta = my_theta, tau = my_tau, years = 23,
+novax_noseason <- smile_main(theta = my_theta, tau = my_tau, years = 23,
                             # fixed survival probability and fixed b
                             zeta_novax = high_surv, b_fixed = my_b_fixed,
                             # parameters for host population dynamics include births and deaths
@@ -322,7 +322,7 @@ novax_noseason <- smile_fx(theta = my_theta, tau = my_tau, years = 23,
 
 # novax_noseason %>% build_SMILE_plots()
 
-novax_yesseason <- smile_fx(theta = my_theta, tau = my_tau, years = 23,
+novax_yesseason <- smile_main(theta = my_theta, tau = my_tau, years = 23,
                             # fixed survival probability
                             zeta_novax = high_surv,
                             # Parameters to induce seasonal forcing in transmission
@@ -449,7 +449,7 @@ my_b_season <- b_season(b0 = -30, b1 = 0.85, period = 3*52,t= 0:nweeks)
 
 ```{r fig.width=12, fig.height=4}
 
-vax_noseason_low_surv <- smile_fx(theta = my_theta, tau = my_tau, years = 23,
+vax_noseason_low_surv <- smile_main(theta = my_theta, tau = my_tau, years = 23,
                             # fixed b for no seasonality
                             b_fixed = my_b_fixed,
                             # parameters for survival curve with varying vaccination levels
@@ -460,7 +460,7 @@ vax_noseason_low_surv <- smile_fx(theta = my_theta, tau = my_tau, years = 23,
 plot_grid(vax_noseason_low_surv %>% build_SMILE_plots() + labs(title = "noseason-lowsurv"),
           vax_noseason_low_surv %>% build_SL_plot())
 
-vax_season_low_surv <- smile_fx(theta = my_theta, tau = my_tau, years = 23,
+vax_season_low_surv <- smile_main(theta = my_theta, tau = my_tau, years = 23,
                             # Parameters to induce seasonal forcing in transmission
                             b0 = -30, b1 = 0.85, period = 3*52,
                             # parameters for survival curve with varying vaccination levels
@@ -476,7 +476,7 @@ plot_grid(vax_season_low_surv %>% build_SMILE_plots() + labs(title = "season-low
 
 ```{r}
 
-vax_noseason_med_surv <- smile_fx(theta = my_theta, tau = my_tau, years = 23,
+vax_noseason_med_surv <- smile_main(theta = my_theta, tau = my_tau, years = 23,
                             # fixed b for no seasonality
                             b_fixed = my_b_fixed,
                             # parameters for survival curve with varying vaccination levels
@@ -487,7 +487,7 @@ vax_noseason_med_surv <- smile_fx(theta = my_theta, tau = my_tau, years = 23,
 plot_grid(vax_noseason_med_surv %>% build_SMILE_plots() + labs(title = "noseason_medsurv"),
           vax_noseason_med_surv %>% build_SL_plot())
 
-vax_season_med_surv <- smile_fx(theta = my_theta, tau = my_tau, years = 23,
+vax_season_med_surv <- smile_main(theta = my_theta, tau = my_tau, years = 23,
                             # Parameters to induce seasonal forcing in transmission
                             b0 = -30, b1 = 0.85, period = 3*52,
                             # parameters for survival curve with varying vaccination levels
@@ -503,7 +503,7 @@ plot_grid(vax_season_med_surv %>% build_SMILE_plots() + labs(title = "season_med
 
 ```{r}
 
-vax_noseason_high_surv <- smile_fx(theta = my_theta, tau = my_tau, years = 23,
+vax_noseason_high_surv <- smile_main(theta = my_theta, tau = my_tau, years = 23,
                             # fixed b for no seasonality
                             b_fixed = my_b_fixed,
                             # parameters for survival curve with varying vaccination levels
@@ -514,7 +514,7 @@ vax_noseason_high_surv <- smile_fx(theta = my_theta, tau = my_tau, years = 23,
 plot_grid(vax_noseason_high_surv %>% build_SMILE_plots() + labs(title = "noseason_highsurv"),
           vax_noseason_high_surv %>% build_SL_plot())
 
-vax_season_high_surv <- smile_fx(theta = my_theta, tau = my_tau, years = 23,
+vax_season_high_surv <- smile_main(theta = my_theta, tau = my_tau, years = 23,
                             # Parameters to induce seasonal forcing in transmission
                             b0 = -30, b1 = 0.85, period = 3*52,
                             # parameters for survival curve with varying vaccination levels
@@ -758,7 +758,7 @@ data.frame(week = 0:nweeks, b = my_b_season) %>%
 
 ```{r fig.width=12, fig.height=4, echo = FALSE, eval=FALSE}
 # simplest scenario, no host dynamics
-sim1 <- smile_fx(tau = 10, theta = 100, b_fixed = 0.001, years = 20, age_struc = FALSE, N1 = 20000, zeta_novax = 0.5, output_df = TRUE)
+sim1 <- smile_main(tau = 10, theta = 100, b_fixed = 0.001, years = 20, age_struc = FALSE, N1 = 20000, zeta_novax = 0.5, output_df = TRUE)
 sim1 %>% build_SMILE_plots(., 1) + labs(title = "Simplest - no host dynamics")
 ```
 We start with a 20,000 susceptible population, but since there are no host dynamics, no reproduction, then the population just continues to decrease as a result of the outbreak. In this case, we have incorporated a high survival probability, exploring the range from 0.85 to 1, the lower the survival probability, the faster this decline in population size.
@@ -770,7 +770,7 @@ my_smile_df <- NULL
 for(i in 1:length(surv_prob_seq)) {
   
   i_survival <- surv_prob_seq[i]
-  sim <- smile_fx(tau = 10, theta = 100, b_fixed = 0.001, years = 20, age_struc = FALSE, N1 = 20000, zeta_novax = i_survival, output_df = TRUE) %>% 
+  sim <- smile_main(tau = 10, theta = 100, b_fixed = 0.001, years = 20, age_struc = FALSE, N1 = 20000, zeta_novax = i_survival, output_df = TRUE) %>% 
     mutate(survival = i_survival)
   
   my_smile_df <- bind_rows(my_smile_df, sim)
@@ -796,7 +796,7 @@ my_smile_df <- NULL
 for(i in 1:length(surv_prob_seq)) {
   
   i_survival <- surv_prob_seq[i]
-  sim <- smile_fx(tau = 10, theta = 100, b_fixed = 0.001, years = 20, age_struc = TRUE, N1 = 20000, K =10000, rho_pop = 0.36, sigmaa = 0.92^(1/52),
+  sim <- smile_main(tau = 10, theta = 100, b_fixed = 0.001, years = 20, age_struc = TRUE, N1 = 20000, K =10000, rho_pop = 0.36, sigmaa = 0.92^(1/52),
                   zeta_novax = i_survival, output_df = TRUE) %>% 
     mutate(survival = i_survival)
   
@@ -824,7 +824,7 @@ my_smile_df <- NULL
 for(i in 1:length(surv_prob_seq)) {
   
   i_survival <- surv_prob_seq[i]
-  sim <- smile_fx(tau = 10, theta = 100, b_fixed = 0.001, years = 20, age_struc = TRUE, N1 = 20000, K =20000, rho_pop = 0.36, sigmaa = 0.92^(1/52),
+  sim <- smile_main(tau = 10, theta = 100, b_fixed = 0.001, years = 20, age_struc = TRUE, N1 = 20000, K =20000, rho_pop = 0.36, sigmaa = 0.92^(1/52),
                   zeta_novax = i_survival, output_df = TRUE) %>% 
     mutate(survival = i_survival)
   
@@ -852,7 +852,7 @@ my_smile_df <- NULL
 for(i in 1:length(surv_prob_seq)) {
   
   i_survival <- surv_prob_seq[i]
-  sim <- smile_fx(tau = 10, theta = 100, b_fixed = 0.001, years = 20, age_struc = TRUE, N1 = 20000, K =50000, rho_pop = 0.36, sigmaa = 0.92^(1/52),
+  sim <- smile_main(tau = 10, theta = 100, b_fixed = 0.001, years = 20, age_struc = TRUE, N1 = 20000, K =50000, rho_pop = 0.36, sigmaa = 0.92^(1/52),
                   zeta_novax = i_survival, output_df = TRUE) %>% 
     mutate(survival = i_survival)
   
@@ -882,7 +882,7 @@ my_smile_df <- NULL
 for(i in 1:length(surv_prob_seq)) {
   
   i_survival <- surv_prob_seq[i]
-  sim <- smile_fx(tau = 10, theta = 100, years = 20, age_struc = TRUE, N1 = 20000, K =20000, rho_pop = 0.36, sigmaa = 0.92^(1/52),
+  sim <- smile_main(tau = 10, theta = 100, years = 20, age_struc = TRUE, N1 = 20000, K =20000, rho_pop = 0.36, sigmaa = 0.92^(1/52),
                   b0 = -30, b1 = 0.85, period = 3*52,
                   zeta_novax = i_survival, output_df = TRUE) %>% 
     mutate(survival = i_survival)
@@ -913,7 +913,7 @@ my_smile_df <- NULL
 for(i in 1:length(surv_prob_seq)) {
   
   i_survival <- surv_prob_seq[i]
-  sim <- smile_fx(tau = 10, theta = 100, years = 20, age_struc = TRUE, N1 = 20000, K =20000, rho_pop = 0.36, sigmaa = 0.92^(1/52),
+  sim <- smile_main(tau = 10, theta = 100, years = 20, age_struc = TRUE, N1 = 20000, K =20000, rho_pop = 0.36, sigmaa = 0.92^(1/52),
                   b0 = -30, b1 = 0.85, period = 7*52,
                   zeta_novax = i_survival, output_df = TRUE) %>% 
     mutate(survival = i_survival)
@@ -985,7 +985,7 @@ my_smile_df <- NULL
 for(i in 1:length(surv_prob_seq)) {
   
   i_survival <- surv_prob_seq[i]
-  sim <- smile_fx(tau = 10, theta = 100, years = 20, age_struc = TRUE, N1 = 20000, K =20000, rho_pop = 0.36, sigmaa = 0.92^(1/52),
+  sim <- smile_main(tau = 10, theta = 100, years = 20, age_struc = TRUE, N1 = 20000, K =20000, rho_pop = 0.36, sigmaa = 0.92^(1/52),
                   b0 = -18, b1 = 0.55, period = 3*52,
                   zeta_novax = i_survival, output_df = TRUE) %>% 
     mutate(survival = i_survival)

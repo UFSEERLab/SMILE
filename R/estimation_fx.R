@@ -24,7 +24,7 @@ LIZ_negll	<-	function(pars=c(theta,tau,b0,b1),period,years,SMILE.obs){
   #clim.pred	<-	infect2clim(wt.bar=wt.bar.hat,b0=b0,b1=b1,kw=kw,t=1:length(clim),period=period)
   #clim.ssq	<-	sum((clim-clim.pred)^2)
 
-  SMILE.pred	<-	smile_fx(b0,b1,period,theta,tau,years, sigmaa = 0.92^(1/52))
+  SMILE.pred	<-	smile_main(b0,b1,period,theta,tau,years, sigmaa = 0.92^(1/52))
   ts2keep		<-	names(SMILE.pred)%in%names(SMILE.obs)
   SMILE.pred	<-	SMILE.pred[which(ts2keep==TRUE)]
   loglik.ls	<-	vector("list",length(SMILE.obs))

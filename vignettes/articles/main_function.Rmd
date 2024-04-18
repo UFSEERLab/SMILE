@@ -9,34 +9,22 @@ knitr::opts_chunk$set(
 )
 ```
 
+Start by loading our package. In this article we want to show how the updated function works to recreate the same simulation scenarios tested in the first iteration of this code. Previously, multiple functions were needed to incorporate population dynamics or seasonality, or both. In this example, we will show you how to set the parameters to the package's main function `SMILE::smile_main()` and generate the same scenarios as before. 
+
 ```{r setup}
 library(SMILE)
 ```
 
-Testing if the new function can recreate all the previous scenarios and new ones. Having a main function will help with the iteration and testing of the vaccine scenarios.
+The following packages are only needed for visualization and data wrangling purposes:
 
 ```{r message=FALSE, warning=FALSE}
-library(ggplot2)
-library(dplyr)
-library(purrr)
-library(tibble)
-library(tidyr)
-library(stringr)
+library(tidyverse)
 library(cowplot)
 ```
 
-
+The code below shows the original script with the defined functions to evaluate the model under different assumptions of population dynamics or seasonal forcing. This is code show in the [first commit for this repository](https://github.com/UFSEERLab/SMILE/tree/e176302c90e16205b0211906e1ef93e641776407). 
 ```{r OG_fxs}
 # OG functions 
-
-# This code is the source of functions that define the SMILE model.
-# It is a compilation of functions required to evalluate the model with different 
-# assumptions starting from the determinisitc simple model withou population dynamics
-# or seasonal forcing and ending with the stochastic version of the model with 
-# population dynamics and seasonal forcing. It also includes some useful functions 
-# evaluated inside the functions to simulate the time series.
-# Finally I provide the functions required to estimate the parameters of the model
-# using maximum likelihood optimization through the optim function.
 
 # Author: Juan Pablo Gomez
 # Version 1.1.
@@ -526,7 +514,7 @@ build_comp_plots <- function(og_sims, new_sims) {
       geom_line() +
       theme_bw() -> E_plot
     
-    plot_grid(S_plot, M_plot, I_plot, L_plot, E_plot, ncol = 1)
+    plot_grid(S_plot, M_plot, I_plot, L_plot, E_plot, ncol = 3)
 
 }
 ```
@@ -542,13 +530,15 @@ theta=100
 sim1.0	<-	smile1(b=b,tau=tau,theta=theta,years=10)
 ```
 
+To recreate this scenario with the new function, we use the following parameters. Note the argument `age_struc` is set to `FALSE`.
+
 ```{r}
-# To recreate this scenario with the new function:
-sim1_1 <- smile_fx(tau = 10, b_fixed = 0.001, theta = 100, years = 10, age_struc = FALSE)
+sim1_1 <- smile_main(tau = tau, b_fixed = b, theta = theta, years = 10, age_struc = FALSE)
+# sim1_1 <- smile_main(tau = 10, b_fixed = 0.001, theta = 100, years = 10, age_struc = FALSE)
 ```
 
 
-```{r echo=FALSE, fig.width=10, fig.height=12}
+```{r echo=FALSE, fig.width=12, fig.height=4}
 build_comp_plots(sim1.0, sim1_1)
 ```
 
@@ -568,11 +558,12 @@ sim2.0	<-	smile2(b0=b0,b1=b1,period=period,tau=tau,theta=theta,years=10)
 
 ```{r}
 
-sim2_1 <- smile_fx(b0 = -30, b1 = 0.85, period = 3*52, theta = 100, tau = 10, years = 10, age_struc = FALSE)
+sim2_1 <- smile_main(b0 = b0, b1 = b1, period = period, theta = theta, tau = tau, years = 10, age_struc = FALSE)
+# sim2_1 <- smile_main(b0 = -30, b1 = 0.85, period = 3*52, theta = 100, tau = 10, years = 10, age_struc = FALSE)
 ```
 
 
-```{r echo=FALSE, fig.width=10, fig.height=12}
+```{r echo=FALSE, fig.width=12, fig.height=4}
 build_comp_plots(sim2.0, sim2_1)
 ```
 
@@ -588,19 +579,20 @@ theta=100
 sim3.0	<-	smile3(b=b,tau=tau,theta=theta,years=10)
 ```
 
+If we don't consider seasonal forcing, then b0 and b1 are left as null (the default) and we give the parameter b_fixed for fixed infection probability. When the argument `age_struc` is not set to `FALSE`, the function will use the default parameters of `K` and `rho_pop` to estimate birth pulses every year. These default parameters of carrying capacity and reproductive rate can be changed easily by adding them to the function as arguments. 
 ```{r}
-# If we don't consider seasonal forcing, then b0 and b1 are left as null (the default) and we give the parameter b_fixed for fixed infection probability
-sim3_1 <- smile_fx(tau = 10, b_fixed = 0.001, theta = 100, years = 10)
+sim3_1 <- smile_main(tau = tau, b_fixed = b, theta = theta, years = 10)
+# sim3_1 <- smile_main(tau = 10, b_fixed = 0.001, theta = 100, years = 10)
 ```
 
 
-```{r echo=FALSE, fig.width=10, fig.height=12}
+```{r echo=FALSE, fig.width=12, fig.height=4}
 build_comp_plots(sim3.0, sim3_1)
 ```
 
 
 # smile4 
- With births and seasonal forcing of infection
+ With births only and seasonal forcing of infection
  
 ```{r}
 tau=10
@@ -613,12 +605,13 @@ theta=100
 sim4.0	<-	smile4(b0=b0,b1=b1,period=period,tau=tau,theta=theta,years=10)
 ```
 
+In the function we change the parameter for deaths from non-disease causes to `sigmaa = 1`, since the smile4 function does not consider deaths from other causes. It is not necessary to change this parameter though, since the default in the function is already set to 1. 
 ```{r}
-# In the function we change sigmaa = 1, since the smile4 function does not consider deaths from other causes.
-sim4_1 <- smile_fx(b0 = -30, b1 = 0.85, period = 3*52, theta = 100, tau = 10, years = 10, sigmaa = 1)
+sim4_1 <- smile_main(b0 = b0, b1 = b1, period = period, theta = theta, tau = tau, years = 10, sigmaa = 1)
+# sim4_1 <- smile_main(b0 = -30, b1 = 0.85, period = 3*52, theta = 100, tau = 10, years = 10, sigmaa = 1)
 ```
 
-```{r echo=FALSE, fig.width=10, fig.height=12}
+```{r echo=FALSE, fig.width=12, fig.height=4}
 build_comp_plots(sim4.0, sim4_1)
 ```
 
@@ -639,11 +632,12 @@ sim5.0		<-	smile5(b0=b0,b1=b1,period=period,tau=tau,theta=theta,years=10)
 ```
 
 ```{r}
-sim5_1 <- smile_fx(b0 = -30, b1 = 0.85, period = 3*52, theta = 10, tau = 10, years = 10, sigmaa = 0.92^(1/52))
+sim5_1 <- smile_main(b0 = b0, b1 = b1, period = period, theta = theta, tau = tau, years = 10, sigmaa = 0.92^(1/52))
+# sim5_1 <- smile_main(b0 = -30, b1 = 0.85, period = 3*52, theta = 10, tau = 10, years = 10, sigmaa = 0.92^(1/52))
 ```
 
 
-```{r echo=FALSE, fig.width=10, fig.height=12}
+```{r echo=FALSE, fig.width=12, fig.height=4}
 build_comp_plots(sim5.0, sim5_1)
 ```
 
@@ -666,7 +660,8 @@ stochastic_sims	<-	list()
 LIZ_stoch		<-	matrix(0,nrow=100,ncol=520)
 for(i in 1:100){
   
-	stochastic_sims[[i]]	<-	smile_fx(b0 = -30, b1 = 0.85, period = 3*52, theta = 10, tau = 10, years = 10, sigmaa = 0.92^(1/52), stochastic = TRUE)
+	stochastic_sims[[i]]	<-	smile_main(b0 = b0, b1 = b1, period = period, theta = theta, tau = tau, years = 10, sigmaa = 0.92^(1/52), 
+	                                   stochastic = TRUE)
 	LIZ_stoch[i,]			<-	stochastic.sims[[i]]$LIZ
 	
 }
@@ -758,46 +753,5 @@ long_hatmat %>%
   theme_classic() -> tau_plot
 
 plot_grid(b0_plot, b1_plot, theta_plot, tau_plot, nrow = 2)
-
-```
-
-
-# Adding vaccine 
-
-I modified the main function so we use the same one and just change the arguments.
-
-```{r}
-
-years <- 23
-vacc.pcts<- c(0.34, 0.24, 0.37, 0.44, 0.44, 0.64, 0.71, 0.69, 0.73, 
-              0.72, 0.66, 0.60, 0.57, 0.27, 0.27, 0.16, 0.12, 0.12, 
-              0.10, 0.08, 0.05, 0.05, 0.02)
-
-vax_smile5 <- smile_fx(b0 = -30, b1 = 0.85, period = 3*52, theta = 100, tau = 1, years = 23, 
-                       beta_0 = -3.5, beta_1 = 7.4, vax = vacc.pcts, N1 = 20000, K = 50000, output_df = TRUE)
-
-vax_smile5 %>% 
-  pivot_longer(-week, names_to = "compartment", values_to = "n") %>% 
-  mutate(compartment = factor(compartment, levels = c("S", "M", "I", "L", "E", "Z"))) %>% 
-  ggplot(aes(x = week, y = n)) +
-  facet_wrap(~compartment, scales = "free") +
-  geom_path() +
-  theme_bw()
-```
-
-## Scenario 6 from Tan's where we have no seasonality in transmission 
-
-```{r}
-
-vax_smile6 <- smile_fx(b0 = NULL, b1 = NULL, period = NULL, theta = 100, tau = 1, years = 23, 
-                       beta_0 = -3.5, beta_1 = 6.86, vax = vacc.pcts, N1 = 20000, K = 50000, b_fixed = 0.001, output_df = TRUE)
-
-vax_smile6 %>% 
-  pivot_longer(-week, names_to = "compartment", values_to = "n") %>% 
-  mutate(compartment = factor(compartment, levels = c("S", "M", "I", "L", "E", "Z"))) %>% 
-  ggplot(aes(x = week, y = n)) +
-  facet_wrap(~compartment, scales = "free") +
-  geom_path() +
-  theme_bw()
 
 ```
