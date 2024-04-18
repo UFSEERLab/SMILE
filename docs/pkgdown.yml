@@ -4,5 +4,8 @@ pkgdown_sha: ~
 articles:
   epi2024: epi2024.html
   old_vs_new: old_vs_new.html
-last_built: 2024-04-18T14:23Z
+last_built: 2024-04-18T14:49Z
+urls:
+  reference: https://ufseerlab.github.io/SMILE/, https://github.com/UFSEERLab/SMILE/reference
+  article: https://ufseerlab.github.io/SMILE/, https://github.com/UFSEERLab/SMILE/articles
 
