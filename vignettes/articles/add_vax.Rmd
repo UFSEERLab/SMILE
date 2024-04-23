@@ -10,6 +10,7 @@ knitr::opts_chunk$set(
 ```
 
 ```{r setup, message=FALSE, warning=FALSE}
+set.seed(9785)
 library(SMILE)
 library(tidyverse)
 library(cowplot)

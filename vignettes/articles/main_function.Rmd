@@ -13,6 +13,7 @@ knitr::opts_chunk$set(
 Start by loading our package. In this article we want to show how the updated function works to recreate the same simulation scenarios tested in the first iteration of this code. Previously, multiple functions were needed to incorporate population dynamics or seasonality, or both. In this example, we will show you how to set the parameters to the package's main function `SMILE::smile_main()` and generate the same scenarios as before. 
 
 ```{r setup}
+set.seed(978645)
 library(SMILE)
 ```
 

@@ -41,6 +41,7 @@
 <li class="active nav-item dropdown">
   <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button" aria-expanded="false" aria-haspopup="true" id="dropdown-articles">Articles</a>
   <div class="dropdown-menu" aria-labelledby="dropdown-articles">
+    <a class="dropdown-item" href="../articles/add_vax.html">add_vax</a>
     <a class="dropdown-item" href="../articles/epi2024.html">epi2024</a>
     <a class="dropdown-item" href="../articles/main_function.html">main_function</a>
   </div>
@@ -82,7 +83,8 @@ this example, we will show you how to set the parameters to the
 package’s main function <code><a href="../reference/smile_main.html">SMILE::smile_main()</a></code> and generate
 the same scenarios as before.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ufseerlab.github.io/SMILE/" class="external-link">SMILE</a></span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">978645</span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ufseerlab.github.io/SMILE/" class="external-link">SMILE</a></span><span class="op">)</span></span></code></pre></div>
 <p>The following packages are only needed for visualization and data
 wrangling purposes:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
