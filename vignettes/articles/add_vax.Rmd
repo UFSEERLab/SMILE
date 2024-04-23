@@ -15,9 +15,10 @@ library(tidyverse)
 library(cowplot)
 ```
 
-We incorporate vaccination into the model as a term that modifies the probability of moving from compartment I to D or M. This means, vaccination is incorporated into the model as having an effect over survival probability, by changing the probability of moving from the infected compartment to the LIZ (death) or M (Immune) compartments.
+We incorporate vaccination into the model as a term that modifies the probability of survival, in other words, it modifies the fraction of the population that moves from the infected compartment to the immune compartment, instead of dying and becoming LIZ. The purpose of vaccination is to enable the host to fight off the infection, and by preventing death, we also reduce the number of infective particles becoming available in the environment.
+The parameters associated to vaccination describe the survival curve offered by herd immunity. The parameters $\beta_0$ and $\beta_1$ define a logistic curve for which different population-level vaccination rates translate to different survival probabilities. These parameters are associated to the host's natural immunity to the pathogen, and the vaccine's effectiveness.  
 
-As a simple exercise, we can consider a population over the course of 10 years, where the vaccination rate is held constant. In the case of a constant vaccination rate, we are essentially just changing the survival probability, and it remains the same over the course of the simulation.
+As a simple exercise, we can consider a population over the course of 10 years, where the vaccination rate is held constant. In the case of a constant vaccination rate, we are essentially keeping survival probability constant over the course of the simulation.
 
 First, we set our parameters:
 ```{r}

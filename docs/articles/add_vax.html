@@ -77,15 +77,21 @@
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://tidyverse.tidyverse.org" class="external-link">tidyverse</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://wilkelab.org/cowplot/" class="external-link">cowplot</a></span><span class="op">)</span></span></code></pre></div>
 <p>We incorporate vaccination into the model as a term that modifies the
-probability of moving from compartment I to D or M. This means,
-vaccination is incorporated into the model as having an effect over
-survival probability, by changing the probability of moving from the
-infected compartment to the LIZ (death) or M (Immune) compartments.</p>
+probability of survival, in other words, it modifies the fraction of the
+population that moves from the infected compartment to the immune
+compartment, instead of dying and becoming LIZ. The purpose of
+vaccination is to enable the host to fight off the infection, and by
+preventing death, we also reduce the number of infective particles
+becoming available in the environment. The parameters associated to
+vaccination describe the survival curve offered by herd immunity. The
+parameters <span class="math inline">\(\beta_0\)</span> and <span class="math inline">\(\beta_1\)</span> define a logistic curve for which
+different population-level vaccination rates translate to different
+survival probabilities. These parameters are associated to the host’s
+natural immunity to the pathogen, and the vaccine’s effectiveness.</p>
 <p>As a simple exercise, we can consider a population over the course of
 10 years, where the vaccination rate is held constant. In the case of a
-constant vaccination rate, we are essentially just changing the survival
-probability, and it remains the same over the course of the
-simulation.</p>
+constant vaccination rate, we are essentially keeping survival
+probability constant over the course of the simulation.</p>
 <p>First, we set our parameters:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># base parameters</span></span>
@@ -143,13 +149,13 @@ generated</p>
 <span>           vax <span class="op">=</span> <span class="va">my_yearly_vax</span>, beta_0 <span class="op">=</span> <span class="va">my_beta0</span>, beta_1 <span class="op">=</span> <span class="va">my_beta1</span>, output_df <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span> <span class="op">-&gt;</span> <span class="va">var_vax_sim</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">var_vax_sim</span><span class="op">)</span></span>
-<span><span class="co">#&gt;   week    S M I L        E           Z</span></span>
-<span><span class="co">#&gt; 1    1 5000 0 0 1 1.000000 0.007624547</span></span>
-<span><span class="co">#&gt; 2    2 5000 0 0 0 1.986800 0.007624547</span></span>
-<span><span class="co">#&gt; 3    3 5000 0 0 0 1.960574 0.007624547</span></span>
-<span><span class="co">#&gt; 4    4 5000 0 0 0 1.934695 0.007624547</span></span>
-<span><span class="co">#&gt; 5    5 5000 0 0 0 1.909157 0.007624547</span></span>
-<span><span class="co">#&gt; 6    6 5000 0 0 0 1.883956 0.007624547</span></span></code></pre></div>
+<span><span class="co">#&gt;   week    S M I L        E          Z</span></span>
+<span><span class="co">#&gt; 1    1 5000 0 0 1 1.000000 0.02496662</span></span>
+<span><span class="co">#&gt; 2    2 5000 0 0 0 1.986800 0.02496662</span></span>
+<span><span class="co">#&gt; 3    3 5000 0 0 0 1.960574 0.02496662</span></span>
+<span><span class="co">#&gt; 4    4 5000 0 0 0 1.934695 0.02496662</span></span>
+<span><span class="co">#&gt; 5    5 5000 0 0 0 1.909157 0.02496662</span></span>
+<span><span class="co">#&gt; 6    6 5000 0 0 0 1.883956 0.02496662</span></span></code></pre></div>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">var_vax_sim</span> <span class="op">|&gt;</span> <span class="fu">build_SMILE_plots</span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p><img src="add_vax_files/figure-html/unnamed-chunk-7-1.png" width="700"></p>
