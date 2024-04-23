@@ -97,7 +97,7 @@ smile_main <- function(b0,b1,period,theta,tau,years,
       births.happen = 0
       rep.prob = 0
     } else {
-      births.happen	<-	as.numeric(t%%52==0)
+      births.happen	<-	as.numeric(t%%52==0) # yearly repro pulses, 52wks=year
       rep.prob	<-	rho_n(N[tm1], K, rho_pop)
     }
 
@@ -116,9 +116,9 @@ smile_main <- function(b0,b1,period,theta,tau,years,
 
     } else {
 
-      S[t]	<-	(S[tm1]*(1-lambda[tm1]))*sigmaa + M[tm1]*sigmaa*1/52 + rep.prob*(N[tm1])*births.happen
+      S[t]	<-	(S[tm1]*(1-lambda[tm1]))*sigmaa + M[tm1]*sigmaa*alpha + rep.prob*(N[tm1])*births.happen
       I[t]	<-	S[tm1]*lambda[tm1]
-      M[t]	<-	I[tm1]*zeta[tm1] + M[tm1]*sigmaa*(1-(1/52))
+      M[t]	<-	I[tm1]*zeta[tm1] + M[tm1]*sigmaa*(1-(alpha))
       L[t]	<-	I[tm1]*(1-zeta[tm1])
       E[t]	<-	psi*L[tm1] + E[tm1]*gamma
       N[t]	<-	S[t]+M[t]
@@ -133,9 +133,6 @@ smile_main <- function(b0,b1,period,theta,tau,years,
                    ,LIZ=L[-1]
                    ,Environment=E[-1])
 
-  if(output_df == TRUE) {
-    results <- data.frame(week = 1:n.weeks, S, M, I, L, E)
-  }
 
   if(output_df == TRUE) {
     if(is.null(vax) == FALSE) {
@@ -144,6 +141,7 @@ smile_main <- function(b0,b1,period,theta,tau,years,
       results <- data.frame(week = 1:n.weeks, S, M, I, L, E)
     }
   }
+
 
   return(results)
 }

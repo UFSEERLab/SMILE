@@ -60,7 +60,6 @@ b_season	<-	function(b0,b1,period,t){
 }
 
 
-# Adapting the estimation functions -----------------------------------
 
 #' Calculating local R0
 #'

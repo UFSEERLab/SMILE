@@ -1,0 +1,87 @@
+---
+title: "vax_manuscript"
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup, message=FALSE, warning=FALSE}
+set.seed(9785)
+library(SMILE)
+library(tidyverse)
+library(cowplot)
+```
+
+```{r}
+theme_set(theme_bw())
+```
+
+# 1. Set out the experiments 
+
+## 1.a Survival probability parameters
+```{r}
+vax_seq <- seq(0, 1, 0.001)
+my_beta_1 <- 5
+my_beta_0 <- c(-1, 0, 2)
+
+map(my_beta_0, \(.x) data.frame(surv_prob = calc_survival_prob(beta_0 = .x, beta_1 = my_beta_1, vax_rate = vax_seq),
+                                beta_0 = .x, vax_rate = vax_seq)) |> 
+  list_rbind() |> 
+  ggplot(aes(x = vax_rate, y = surv_prob, color = factor(beta_0))) +
+  geom_line() +
+  scale_x_continuous(labels = scales::label_percent(), breaks = seq(0, 1, 0.1)) +
+  scale_y_continuous(breaks = seq(0,1,0.05)) +
+  labs(y = "Survival probability", x = "Vaccination rate")
+```
+
+## 1.b Simulation base parameters
+
+```{r}
+# base parameters
+my_years <- 10
+my_tau <- 1
+my_theta <- 100
+
+# seasonal forcing parameters
+my_b_fixed <- 0.001
+my_b0 <- -30
+my_b1 <- 0.85
+my_outbreak_period <- 3*52
+
+```
+
+## 1.c Experiments
+1.    No vaccination
+1.    Fixed vaccination at three levels
+1.    Variable vaccination at random
+1.    Reactive vaccination
+
+
+# 2. Simulations 
+
+```{r}
+# no vaccine, three levels of survival
+map(my_beta_0, \(.x) 
+    smile_main(b0 = my_b0, b1 = my_b1, period = my_outbreak_period,
+           theta = my_theta, tau = my_tau, years = my_years,
+           vax = rep(0, my_years), beta_0 = .x, beta_1 = my_beta_1, output_df = TRUE) |> mutate(scenario = paste("beta_0 =", .x))) |> 
+  list_rbind() -> sims_no_vax
+
+head(sims_no_vax)
+```
+
+
+```{r}
+sims_no_vax |> 
+  pivot_longer(-c(week, scenario), names_to = "compartment", values_to = "n") |> 
+  mutate(compartment = factor(compartment, levels = c("S", "M", "I", "L", "E", "Z"))) %>% 
+    ggplot(aes(x = week, y = n, color = scenario)) +
+    facet_wrap(~compartment, scales = "free", nrow = 2) +
+    geom_line()
+```
+
+
