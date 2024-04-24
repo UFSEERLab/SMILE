@@ -20,9 +20,7 @@ library(cowplot)
 theme_set(theme_bw())
 ```
 
-# 1. Set out the experiments 
 
-## 1.a Survival probability parameters
 ```{r}
 vax_seq <- seq(0, 1, 0.001)
 my_beta_1 <- 5
@@ -38,7 +36,6 @@ map(my_beta_0, \(.x) data.frame(surv_prob = calc_survival_prob(beta_0 = .x, beta
   labs(y = "Survival probability", x = "Vaccination rate")
 ```
 
-## 1.b Simulation base parameters
 
 ```{r}
 # base parameters
@@ -54,14 +51,8 @@ my_outbreak_period <- 3*52
 
 ```
 
-## 1.c Experiments
-1.    No vaccination
-1.    Fixed vaccination at three levels
-1.    Variable vaccination at random
-1.    Reactive vaccination
 
-
-# 2. Simulations 
+# Simulations 
 
 ```{r}
 # no vaccine, three levels of survival
@@ -83,5 +74,610 @@ sims_no_vax |>
     facet_wrap(~compartment, scales = "free", nrow = 2) +
     geom_line()
 ```
+
+# Parameter space ----------------------------
+
+
+```{r fig.width=12, fig.height=4, echo = FALSE, eval=FALSE}
+# simplest scenario, no host dynamics
+sim1 <- smile_main(tau = 10, theta = 100, b_fixed = 0.001, years = 20, age_struc = FALSE, N1 = 20000, zeta_novax = 0.5, output_df = TRUE)
+sim1 %>% build_SMILE_plots(., 1) + labs(title = "Simplest - no host dynamics")
+```
+We start with a 20,000 susceptible population, but since there are no host dynamics, no reproduction, then the population just continues to decrease as a result of the outbreak. In this case, we have incorporated a high survival probability, exploring the range from 0.85 to 1, the lower the survival probability, the faster this decline in population size.
+
+```{r fig.width=12, fig.height=4}
+surv_prob_seq <- seq(0.85, 0.98, by = 0.01)
+
+my_smile_df <- NULL
+for(i in 1:length(surv_prob_seq)) {
+  
+  i_survival <- surv_prob_seq[i]
+  sim <- smile_main(tau = 10, theta = 100, b_fixed = 0.001, years = 20, age_struc = FALSE, N1 = 20000, zeta_novax = i_survival, output_df = TRUE) %>% 
+    mutate(survival = i_survival)
+  
+  my_smile_df <- bind_rows(my_smile_df, sim)
+}
+
+
+ my_smile_df %>% 
+    pivot_longer(-c(week, survival), names_to = "compartment", values_to = "n") %>% 
+    mutate(compartment = factor(compartment, levels = c("S", "M", "I", "L", "E", "Z"))) %>% 
+    ggplot(aes(x = week, y = n, color = survival, group = survival)) +
+    facet_wrap(~compartment, scales = "free", nrow = 1) +
+    geom_line(linewidth = 1, alpha = 0.5) +
+    theme_bw() +
+   scale_color_viridis_c()
+```
+
+Now we consider with population dynamics, where there is a yearly birth pulse, and we have death by other causes aside from just disease. Since we still have a relatively high survival probability, you will see that outbreaks occur yearly, following the birth pulses. Over time, the population tries to settle close to carrying capacity with yearly outbreaks.
+
+```{r fig.width=13, fig.height=4}
+surv_prob_seq <- seq(0.85, 0.98, by = 0.01)
+
+my_smile_df <- NULL
+for(i in 1:length(surv_prob_seq)) {
+  
+  i_survival <- surv_prob_seq[i]
+  sim <- smile_main(tau = 10, theta = 100, b_fixed = 0.001, years = 20, age_struc = TRUE, N1 = 20000, K =10000, rho_pop = 0.36, sigmaa = 0.92^(1/52),
+                  zeta_novax = i_survival, output_df = TRUE) %>% 
+    mutate(survival = i_survival)
+  
+  my_smile_df <- bind_rows(my_smile_df, sim)
+}
+
+
+ my_smile_df %>% 
+   mutate(N = S + M) %>% 
+    pivot_longer(-c(week, survival), names_to = "compartment", values_to = "n") %>% 
+    mutate(compartment = factor(compartment, levels = c("S", "M", "I", "L", "E", "N"))) %>% 
+    ggplot(aes(x = week, y = n, color = survival, group = survival)) +
+    facet_wrap(~compartment, scales = "free", nrow = 1) +
+    geom_line(linewidth = 1, alpha = 0.5) +
+    theme_bw() +
+   scale_color_viridis_c() +
+   labs(title = "K =10,000")
+ 
+```
+
+```{r fig.width=13, fig.height=4}
+surv_prob_seq <- seq(0.85, 0.98, by = 0.01)
+
+my_smile_df <- NULL
+for(i in 1:length(surv_prob_seq)) {
+  
+  i_survival <- surv_prob_seq[i]
+  sim <- smile_main(tau = 10, theta = 100, b_fixed = 0.001, years = 20, age_struc = TRUE, N1 = 20000, K =20000, rho_pop = 0.36, sigmaa = 0.92^(1/52),
+                  zeta_novax = i_survival, output_df = TRUE) %>% 
+    mutate(survival = i_survival)
+  
+  my_smile_df <- bind_rows(my_smile_df, sim)
+}
+
+
+ my_smile_df %>% 
+   mutate(N = S + M) %>% 
+    pivot_longer(-c(week, survival), names_to = "compartment", values_to = "n") %>% 
+    mutate(compartment = factor(compartment, levels = c("S", "M", "I", "L", "E", "N"))) %>% 
+    ggplot(aes(x = week, y = n, color = survival, group = survival)) +
+    facet_wrap(~compartment, scales = "free", nrow = 1) +
+    geom_line(linewidth = 1, alpha = 0.5) +
+    theme_bw() +
+   scale_color_viridis_c() +
+   labs(title = "K =20,000")
+ 
+```
+
+```{r fig.width=13, fig.height=4}
+surv_prob_seq <- seq(0.85, 0.98, by = 0.01)
+
+my_smile_df <- NULL
+for(i in 1:length(surv_prob_seq)) {
+  
+  i_survival <- surv_prob_seq[i]
+  sim <- smile_main(tau = 10, theta = 100, b_fixed = 0.001, years = 20, age_struc = TRUE, N1 = 20000, K =50000, rho_pop = 0.36, sigmaa = 0.92^(1/52),
+                  zeta_novax = i_survival, output_df = TRUE) %>% 
+    mutate(survival = i_survival)
+  
+  my_smile_df <- bind_rows(my_smile_df, sim)
+}
+
+
+ my_smile_df %>% 
+   mutate(N = S + M) %>% 
+    pivot_longer(-c(week, survival), names_to = "compartment", values_to = "n") %>% 
+    mutate(compartment = factor(compartment, levels = c("S", "M", "I", "L", "E", "N"))) %>% 
+    ggplot(aes(x = week, y = n, color = survival, group = survival)) +
+    facet_wrap(~compartment, scales = "free", nrow = 1) +
+    geom_line(linewidth = 1, alpha = 0.5) +
+    theme_bw() +
+   scale_color_viridis_c() +
+   labs(title = "K =50,000")
+ 
+```
+
+Now we incorporate seasonal transmission to the population. Given the 20 year time frame, we see that a K-=50,000 the population hasn't reached it's equilibrium yet, so we will stick to a K=20,000 to test the seasonal transmission. In  this case, population dynamics and survival don't play such a big role in outbreak timing, and we see that outbreaks are mainly dominated by the period in the seasonal transmission equation. Outbreaks are also larger, with the number of infecteds and deaths almost double what we saw in the scenarios with host dynamics and no seasonal forcing. The number of deaths is variable and changes according to the survival probability.
+
+```{r fig.width=13, fig.height=4}
+surv_prob_seq <- seq(0.85, 0.98, by = 0.01)
+
+my_smile_df <- NULL
+for(i in 1:length(surv_prob_seq)) {
+  
+  i_survival <- surv_prob_seq[i]
+  sim <- smile_main(tau = 10, theta = 100, years = 20, age_struc = TRUE, N1 = 20000, K =20000, rho_pop = 0.36, sigmaa = 0.92^(1/52),
+                  b0 = -30, b1 = 0.85, period = 3*52,
+                  zeta_novax = i_survival, output_df = TRUE) %>% 
+    mutate(survival = i_survival)
+  
+  my_smile_df <- bind_rows(my_smile_df, sim)
+}
+
+
+ my_smile_df %>% 
+   mutate(N = S + M) %>% 
+    pivot_longer(-c(week, survival), names_to = "compartment", values_to = "n") %>% 
+    mutate(compartment = factor(compartment, levels = c("S", "M", "I", "L", "E", "N"))) %>% 
+    ggplot(aes(x = week, y = n, color = survival, group = survival)) +
+    facet_wrap(~compartment, scales = "free", nrow = 1) +
+    geom_line(linewidth = 1, alpha = 0.5) +
+    theme_bw() +
+   scale_color_viridis_c() +
+   labs(title = "b0 = -30, b1 = 0.85, period = 3*52")
+ 
+```
+
+We observe with this example how the period for seasonal transmission determines the outbreaks. It would be interesting to consider different types of outbreaks, perhaps thinking about dormant spores causing outbreaks 5+ years after the animal dies. 
+
+```{r fig.width=13, fig.height=4}
+surv_prob_seq <- seq(0.85, 0.98, by = 0.01)
+
+my_smile_df <- NULL
+for(i in 1:length(surv_prob_seq)) {
+  
+  i_survival <- surv_prob_seq[i]
+  sim <- smile_main(tau = 10, theta = 100, years = 20, age_struc = TRUE, N1 = 20000, K =20000, rho_pop = 0.36, sigmaa = 0.92^(1/52),
+                  b0 = -30, b1 = 0.85, period = 7*52,
+                  zeta_novax = i_survival, output_df = TRUE) %>% 
+    mutate(survival = i_survival)
+  
+  my_smile_df <- bind_rows(my_smile_df, sim)
+}
+
+
+ my_smile_df %>% 
+   mutate(N = S + M) %>% 
+    pivot_longer(-c(week, survival), names_to = "compartment", values_to = "n") %>% 
+    mutate(compartment = factor(compartment, levels = c("S", "M", "I", "L", "E", "N"))) %>% 
+    ggplot(aes(x = week, y = n, color = survival, group = survival)) +
+    facet_wrap(~compartment, scales = "free", nrow = 1) +
+    geom_line(linewidth = 1, alpha = 0.5) +
+    theme_bw() +
+   scale_color_viridis_c() +
+   labs(title = "b0 = -30, b1 = 0.85, period = 7*52")
+ 
+```
+
+changing the parameters of the seasonal transmission function results in changes to the amplitude of the oscillations. The red line is the value used for no seasonality.
+
+```{r fig.width= 8, fig.height=4}
+nweeks <- 20*52
+my_b_season <- b_season(b0 = -16, b1 = 0.6, period = 3*52,t= 0:nweeks)
+
+data.frame(week = 0:nweeks, b = my_b_season) %>% 
+  ggplot(aes(x = week, y = b)) +
+  geom_path() +
+  geom_hline(yintercept = my_b_fixed, color = "red") +
+  theme_bw() +
+  labs(y = "b - probability of transmission")
+```
+
+```{r fig.width=12, fig.height=10}
+my_b0s <- c(-30, -25, -18)
+my_b1s <- c(0.85, 0.7, 0.55)
+period <- c(3,5, 7)
+ 
+# we have 18 parameter combinations 
+
+expand.grid(my_b0s, my_b1s, period) %>%  
+  set_names(., c("b0", "b1", "period")) %>% 
+  mutate(b = pmap(list(b0, b1, period), function(x,y,z) b_season(x,y,z*52, 0:nweeks))) %>%
+  unnest(cols = c(b)) %>% 
+  mutate(params = paste0("b0=", b0, ",b1=", b1, ",period=", period)) %>% 
+  mutate(week = rep(0:nweeks, 27), 
+         period = factor(period, levels = c(3,5, 7))) -> b_season_df
+
+b_season_df %>% 
+  # filter(b1 == 0.6) %>% 
+  mutate(b0 = paste("b0 =", b0),
+         b1 = paste("b1 =", b1)) %>% 
+  ggplot(aes(x = week, y = b, group = params, color = period)) +
+  facet_wrap(vars(b1, b0), ncol = 3, scales = "free") +
+  geom_line(linewidth = 1) +
+  geom_hline(yintercept = my_b_fixed, color = "red") +
+  theme_bw() +
+  labs(y = "b - probability of transmission") +
+  scale_color_manual(values = c("grey", "darkolivegreen", "slateblue"))
+
+```
+
+
+```{r fig.width=13, fig.height=4, echo=FALSE}
+surv_prob_seq <- seq(0.85, 0.98, by = 0.01)
+
+my_smile_df <- NULL
+for(i in 1:length(surv_prob_seq)) {
+  
+  i_survival <- surv_prob_seq[i]
+  sim <- smile_main(tau = 10, theta = 100, years = 20, age_struc = TRUE, N1 = 20000, K =20000, rho_pop = 0.36, sigmaa = 0.92^(1/52),
+                  b0 = -18, b1 = 0.55, period = 3*52,
+                  zeta_novax = i_survival, output_df = TRUE) %>% 
+    mutate(survival = i_survival)
+  
+  my_smile_df <- bind_rows(my_smile_df, sim)
+}
+
+
+ my_smile_df %>% 
+   mutate(N = S + M) %>% 
+    pivot_longer(-c(week, survival), names_to = "compartment", values_to = "n") %>% 
+    mutate(compartment = factor(compartment, levels = c("S", "M", "I", "L", "E", "N"))) %>% 
+    ggplot(aes(x = week, y = n, color = survival, group = survival)) +
+    facet_wrap(~compartment, scales = "free", nrow = 1) +
+    geom_line(linewidth = 1, alpha = 0.5) +
+    theme_bw() +
+   scale_color_viridis_c() +
+   labs(title = "b0 = -18, b1 = 0.55, period = 3*52")
+ 
+```
+
+
+# IMGS2024
+
+
+```{r}
+# base parameters
+my_years <- 23
+my_tau <- 1
+my_theta <- 100
+
+# seasonal forcing parameters
+my_b_fixed <- 0.001
+my_b0 <- -30
+my_b1 <- 0.85
+my_outbreak_period <- 3*52
+
+# Population dynamics
+my_N1 <- 20000
+my_K <- 20000
+my_rho_pop <- 0.36
+my_sigmaa <- 0.92^(1/52)
+
+
+# my_params <- list(tau = 10, theta = 100, years = 20, age_struc = TRUE, N1 = 20000, K =20000, rho_pop = 0.36, sigmaa = 0.92^(1/52),
+#                   b0 = -30, b1 = 0.85, period = 3*52,
+#                   output_df = TRUE)
+
+my_params <- list(tau = my_tau, theta = my_theta, years = my_years,
+                  age_struc = TRUE, N1 = my_N1, K = my_K, rho_pop = my_rho_pop, sigmaa = my_sigmaa,
+                  b0 = my_b0, b1 = my_b1, period = my_outbreak_period,
+                  output_df = TRUE)
+
+# Variable parameters
+vax_seq <- seq(0, 1, 0.001)
+my_beta_1 <- 5
+my_beta_0 <- c(-1, 0, 2)
+fixed_vax <- c(0, 0.1, 0.35, 0.5, 0.7)
+random_vax <- runif(my_years,0, 0.8)
+lao_cai_vax <- c(0.34, 0.24, 0.37, 0.44, 0.44, 0.64, 0.71, 0.69, 0.73, 
+              0.72, 0.66, 0.60, 0.57, 0.27, 0.27, 0.16, 0.12, 0.12, 
+              0.10, 0.08, 0.05, 0.05, 0.02)
+```
+
+```{r}
+# function to visualize results fast
+quick_facet <- function(params_list, my_title = NULL, return_df = FALSE) {
+  
+  sim_df <- do.call(smile_main, params_list)
+  sim_b_season <- b_season(b0 = params_list$b0, b1 = params_list$b1, period = params_list$period, t = 0:(params_list$years*52))
+  sim_R0 <- calc_local_R0(params_list$tau, params_list$theta,sim_b_season, sim_df$E)
+  
+  sim_df |> 
+    bind_cols(b = sim_b_season, R0 = sim_R0) |> 
+    mutate(Nt = S + M) |> 
+    pivot_longer(-week, names_to = "compartment") |> 
+    mutate(compartment = factor(compartment, levels = c("Nt", "S", "M", "I", "L", "E", "R0", "b", "Z"))) -> sim_df_complete
+  
+  if(return_df == TRUE) {
+    return(sim_df_complete)
+  } else {
+    sim_df_complete |> 
+      ggplot(aes(x = week, y = value)) +
+      facet_wrap(~compartment, scales = "free") +
+      geom_line() +
+      labs(title =  my_title) +
+      theme(legend.position = "none") +
+      # scale_y_log10() +
+      NULL -> my_smile_facet
+    return(my_smile_facet)
+  }
+  
+  
+}
+
+```
+
+
+To start, assume a 50% survival rate for cattle, a coin toss if they are not vaccinated.
+
+```{r}
+novax_vax_vector <- rep(fixed_vax[1], my_years)
+novax_params <- append(my_params, list(beta_1 = my_beta_1, beta_0 = my_beta_0[2], vax = novax_vax_vector))
+
+quick_facet(novax_params, "No Vax - 50% survival")
+```
+
+
+Now, fixed vaccine at different levels, middle survival line.
+
+```{r}
+
+map(fixed_vax, function(.x){
+  vax_vector <- rep(.x, my_years)
+  vax_params <- append(my_params, list(beta_1 = my_beta_1, beta_0 = my_beta_0[2], vax = vax_vector))
+
+  quick_facet(vax_params, return_df = TRUE) |> 
+    mutate(fixed_vax_level = .x)
+}) |> 
+  list_rbind() -> fixed_vax_sims
+
+fixed_vax_sims |> 
+  mutate(fixed_vax_level = factor(fixed_vax_level)) |> 
+  filter(compartment %in% c("S", "M", "I", "L", "E", "Z")) |> 
+    ggplot(aes(x = week, y = value, group = fixed_vax_level, color = fixed_vax_level)) +
+      facet_wrap(~compartment, scales = "free") +
+      geom_line() +
+      labs(title =  "Fixed vaccination")
+
+```
+
+```{r}
+fixed_vax_sims |> 
+  mutate(fixed_vax_level = factor(fixed_vax_level)) |> 
+  filter(compartment %in% c("R0")) |> 
+  ggplot(aes(x = week, y = value, color = fixed_vax_level, group = fixed_vax_level)) +
+  facet_wrap(~fixed_vax_level, ncol=1) +
+  geom_line(linewidth = 1.5, alpha = 0.8) +
+  labs(title = "local R0") +
+  geom_hline(yintercept = 1, color = "red", linetype = "dashed") +
+  theme(legend.position = "none") -> R0_plot_fixed
+
+fixed_vax_sims |> 
+  mutate(fixed_vax_level = factor(fixed_vax_level)) |> 
+  filter(compartment %in% c("L")) |> 
+  ggplot(aes(x = week, y = value, color = fixed_vax_level, group = fixed_vax_level)) +
+  facet_wrap(~fixed_vax_level, ncol=1) +
+  geom_line(linewidth = 1.5, alpha = 0.8) +
+  labs(title = "LIZ") +
+  theme(legend.position = "none") -> LIZ_plot_fixed
+
+plot_grid(R0_plot_fixed, LIZ_plot_fixed, ncol=2)
+
+
+```
+
+
+
+## Variable Vaccination
+
+```{r}
+
+data.frame(week = 1:(my_years*52), vax_rate = rep(random_vax, each=52)) |> 
+  ggplot(aes(x = week, y = vax_rate)) +
+  geom_line()
+
+data.frame(year = 1:my_years, vax_rate = random_vax) |> 
+  ggplot(aes(x = year, y = vax_rate)) +
+  geom_line()
+  
+```
+
+
+```{r}
+map(my_beta_0, function(.x){
+  
+  vax_params <- append(my_params, list(beta_1 = my_beta_1, beta_0 = .x, vax = random_vax))
+
+  quick_facet(vax_params, return_df = TRUE) |> 
+    mutate(beta_0 = .x)
+}) |> 
+  list_rbind() -> random_vax_sims
+
+random_vax_sims |> 
+  filter(compartment %in% c("S", "M", "I", "L", "E", "Z")) |> 
+    ggplot(aes(x = week, y = value, group = beta_0, color = factor(beta_0))) +
+      facet_wrap(~compartment, scales = "free") +
+      geom_line() +
+      labs(title =  "Random vaccination")
+
+```
+
+
+```{r}
+random_vax_sims |> 
+  mutate(beta_0 = factor(beta_0)) |> 
+  filter(compartment %in% c("R0")) |> 
+  ggplot(aes(x = week, y = value, color = beta_0, group = beta_0)) +
+  facet_wrap(~beta_0, ncol=1) +
+  geom_line(linewidth = 1.5, alpha = 0.8) +
+  labs(title = "local R0") +
+  geom_hline(yintercept = 1, color = "red", linetype = "dashed") +
+  theme(legend.position = "none") -> R0_plot_random
+
+random_vax_sims |> 
+  mutate(beta_0 = factor(beta_0)) |> 
+  filter(compartment %in% c("L")) |> 
+  ggplot(aes(x = week, y = value, color = beta_0, group = beta_0)) +
+  facet_wrap(~beta_0, ncol=1, scales = "free_y") +
+  geom_line(linewidth = 1.5, alpha = 0.8) +
+  labs(title = "LIZ") +
+  theme(legend.position = "none") -> LIZ_plot_random
+
+random_vax_sims |> 
+  mutate(beta_0 = factor(beta_0)) |> 
+  filter(compartment %in% c("Z")) |> 
+  ggplot(aes(x = week, y = value, color = beta_0, group = beta_0)) +
+  facet_wrap(~beta_0, ncol=1) +
+  geom_line(linewidth = 1.5, alpha = 0.8) +
+  labs(title = "Z") +
+  theme(legend.position = "none") -> Z_plot_random
+
+plot_grid(R0_plot_random, LIZ_plot_random, Z_plot_random, ncol=3)
+```
+How does R0 change with survival due to vaccination?
+
+```{r}
+random_vax_sims |> 
+  mutate(beta_0 = factor(beta_0)) |> 
+  filter(compartment %in% c("R0", "Z")) |> 
+  ggplot(aes(x = week, y = value, linetype = compartment, color = beta_0)) +
+  facet_wrap(~beta_0, ncol = 1) +
+  geom_line(linewidth = 1)
+  
+```
+
+# Lao Cai
+
+```{r}
+data.frame(week = 1:(my_years*52), vax_rate = rep(lao_cai_vax, each=52)) |> 
+  ggplot(aes(x = week, y = vax_rate)) +
+  geom_line()
+```
+
+
+```{r}
+
+map(my_beta_0, function(.x){
+  
+  vax_params <- append(my_params, list(beta_1 = my_beta_1, beta_0 = .x, vax = lao_cai_vax))
+
+  quick_facet(vax_params, return_df = TRUE) |> 
+    mutate(beta_0 = .x)
+}) |> 
+  list_rbind() -> lao_cai_vax_sims
+
+lao_cai_vax_sims |> 
+  # filter(compartment %in% c("S", "M", "I", "L", "E", "Z")) |> 
+    ggplot(aes(x = week, y = value, group = beta_0, color = factor(beta_0))) +
+      facet_wrap(~compartment, scales = "free") +
+      geom_line() +
+      labs(title =  "Lao Cai vaccination")
+
+```
+
+```{r}
+lao_cai_vax_sims |> 
+  mutate(beta_0 = factor(beta_0)) |> 
+  filter(compartment %in% c("R0", "Z")) |> 
+  ggplot(aes(x = week, y = value, linetype = compartment, color = beta_0)) +
+  facet_wrap(~beta_0, ncol = 1) +
+  geom_line(linewidth = 1) +
+  labs(title = "R0 with Z") +
+  geom_hline(yintercept = 1, color = "black", linetype = "dashed") -> A
+
+lao_cai_vax_sims |> 
+  mutate(beta_0 = factor(beta_0)) |> 
+  filter(compartment %in% c("L")) |> 
+  ggplot(aes(x = week, y = value, color = beta_0, group = beta_0)) +
+  facet_wrap(~beta_0, ncol=1, scales = "free_y") +
+  geom_line(linewidth = 1.5, alpha = 0.8) +
+  labs(title = "LIZ") +
+  theme(legend.position = "none") -> B
+
+plot_grid(B, A, ncol = 2, rel_widths = c(1, 1.5), align = "h")
+```
+
+# Province-wide
+
+
+```{r}
+dien_bien <- c(0.300, 0.252, 0.256, 0.205, 0.241, 0.282, 0.269, 0.242, 0.178, 0.173)
+
+# prov_params <- list(tau = my_tau, theta = my_theta,
+#                   age_struc = FALSE, N1 = 100, sigmaa = 1,
+#                   b0 = my_b0, b1 = my_b1, period = my_outbreak_period,
+#                   output_df = TRUE)
+
+prov_params <- list(tau = my_tau, theta = my_theta,
+                  age_struc = TRUE, N1 = my_N1, K = my_K, rho_pop = my_rho_pop, sigmaa = my_sigmaa,
+                  b0 = my_b0, b1 = my_b1, period = my_outbreak_period,
+                  output_df = TRUE)
+
+
+dien_bien_params <- append(prov_params, list(beta_1 = my_beta_1, beta_0 = my_beta_0[2], vax = dien_bien, years = length(dien_bien)))
+
+do.call(smile_main, dien_bien_params)
+quick_facet(dien_bien_params)
+
+```
+```{r}
+quick_prov <- function(province_vax, plot_title){
+  map(my_beta_0, function(.x){
+  
+  vax_params <- append(prov_params, list(beta_1 = my_beta_1, beta_0 = .x, vax = province_vax, years = length(province_vax)))
+
+  quick_facet(vax_params, return_df = TRUE) |> 
+    mutate(beta_0 = .x)
+}) |> 
+  list_rbind() |> 
+    ggplot(aes(x = week, y = value, group = beta_0, color = factor(beta_0))) +
+      facet_wrap(~compartment, scales = "free") +
+      geom_line() +
+      labs(title =  plot_title) -> A
+  
+  data.frame(week = 1:(length(province_vax)*52), vax_rate = rep(province_vax, each=52)) |> 
+  ggplot(aes(x = week, y = vax_rate)) +
+  geom_line() -> B
+  
+  plot_grid(A, B, ncol=1, rel_heights = c(3, 1))
+}
+```
+
+```{r fig.width=10, fig.height=8}
+dien_bien <- c(0.300, 0.252, 0.256, 0.205, 0.241, 0.282, 0.269, 0.242, 0.178, 0.173)
+quick_prov(dien_bien, "Dien Bien")
+```
+
+
+```{r fig.width=10, fig.height=8}
+ha_giang <- c(0.522, 0.410, 0.346, 0.337, 0.321, 0.550, 0.539, 0.538, 0.561, 0.575, 0.608, 0.692)
+quick_prov(ha_giang, "Ha Giang")
+```
+
+```{r fig.width=10, fig.height=8}
+lai_chau <- c(0.313, 0.271, 0.301, 0.124, 0.145, 0.200, 0.084, 0.143, 0.139, 0.138, 0.135, 0.131, 0.135, 0.139, 0.095, 0.187, 0.061, 0.046)
+quick_prov(lai_chau, "Lai Chau")
+```
+
+```{r fig.width=10, fig.height=8}
+son_la <- c(0.194, 0.171, 0.143, 0.110, 0.064, 0.039, 0.031, 0.023, 0.013, 0.004, 0.015, 0.026, 0.006, 0.007, 0.001, 0.000, 0.000, 0.000, 0.000)
+quick_prov(son_la, "Son La")
+```
+
+
+
+
+
+```{r fig.width=10, fig.height=8}
+lao_cai <- c(0.000, 0.130, 0.093, 0.144, 0.174, 0.173, 0.259, 0.290, 0.284, 0.305, 0.303, 0.000, 0.263, 0.253, 0.121, 0.123, 0.112, 0.055, 0.055,
+             0.045, 0.035, 0.023, 0.021, 0.011, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000)
+quick_prov(lao_cai, "Lao Cai")
+```
+
+```{r fig.width=10, fig.height=8}
+cao_bang <- c(0.052, 0.056, 0.051, 0.042, 0.040, 0.024, 0.023)
+quick_prov(cao_bang, "Cao Bang")
+```
+
+
 
 
